@@ -1,0 +1,714 @@
+// E-commerce Database Schema
+// Catalog, inventory, cart, orders, fulfilment, returns, payments and promotions.
+//
+// Two rules run through the whole design:
+//   1. Money is stored in minor units as integers. Never floats.
+//   2. Anything a customer agreed to is snapshotted at order time. A later
+//      price, address or product edit must never rewrite an existing order.
+//
+// Card colors group the model by zone:
+//   indigo  shopper       violet  catalog      teal    inventory
+//   yellow  cart          orange  orders       blue    fulfilment
+//   red     reverse flow  green   money        magenta promotions
+//   grey    shipping and tax configuration
+
+// --------------------------------------------------------------- authentication
+
+Table users [headercolor: #4C6EF5] {
+  id uuid [pk]
+  email varchar(255) [not null, unique]
+  password_hash varchar(255)
+  email_verified_at timestamptz
+  status user_status [not null]
+  last_login_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  deleted_at timestamptz
+
+  Note: 'Authentication/account identity. password_hash is null for accounts authenticated exclusively through an external provider.'
+}
+
+Table user_sessions [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  token_hash varchar(255) [not null, unique]
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null]
+  last_used_at timestamptz
+  revoked_at timestamptz
+  ip_address varchar(45)
+  user_agent varchar(500)
+
+  indexes {
+    (user_id, expires_at)
+  }
+
+  Note: 'Stores hashed session/refresh tokens. Never store raw authentication tokens.'
+}
+
+Table password_reset_tokens [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  token_hash varchar(255) [not null, unique]
+  expires_at timestamptz [not null]
+  used_at timestamptz
+  created_at timestamptz [not null]
+
+  indexes {
+    (user_id, expires_at)
+  }
+
+  Note: 'One-time password reset tokens. Store only the token hash.'
+}
+
+Table email_verification_tokens [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  token_hash varchar(255) [not null, unique]
+  expires_at timestamptz [not null]
+  used_at timestamptz
+  created_at timestamptz [not null]
+
+  indexes {
+    (user_id, expires_at)
+  }
+}
+
+Table user_login_providers [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  provider varchar(40) [not null]
+  provider_user_id varchar(255) [not null]
+  created_at timestamptz [not null]
+
+  indexes {
+    (provider, provider_user_id) [unique]
+    (user_id, provider) [unique]
+  }
+
+  Note: 'Optional external authentication such as Google. Do not store provider passwords.'
+}
+
+Table user_notification_preferences [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [not null, unique, ref: > users.id]
+  order_updates boolean [not null]
+  shipping_updates boolean [not null]
+  promotions boolean [not null]
+  account_security boolean [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  Note: 'Controls which notification categories the user receives. Security notifications should normally remain enabled.'
+}
+
+Table notifications [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [not null, ref: > users.id]
+  type notification_type [not null]
+  title varchar(160) [not null]
+  body text [not null]
+  reference_type varchar(40)
+  reference_id uuid
+  read_at timestamptz
+  created_at timestamptz [not null]
+
+  indexes {
+    (user_id, read_at, created_at)
+    (user_id, created_at)
+  }
+
+  Note: 'In-app notification inbox. reference_type/reference_id can point to an order, shipment, return, etc.'
+}
+
+// ---------------------------------------------------------------- shopper
+
+Table customers [headercolor: #4C6EF5] {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  email varchar(255) [not null]
+  full_name varchar(120)
+  phone varchar(32)
+  accepts_marketing boolean [not null]
+  created_at timestamptz [not null]
+  Note: 'One row per shopper. Guest checkout still creates a customer, flagged by a null password elsewhere in your auth store.'
+}
+
+Table customer_addresses [headercolor: #4C6EF5] {
+  id uuid [pk]
+  customer_id uuid [not null, ref: > customers.id]
+  type address_type [not null]
+  line1 varchar(255) [not null]
+  line2 varchar(255)
+  city varchar(120) [not null]
+  region varchar(120)
+  postal_code varchar(20) [not null]
+  country_code char(2) [not null]
+  is_default boolean [not null]
+
+  indexes {
+    (customer_id, type)
+  }
+  Note: 'The customer address book. Orders do not point here, they copy it. See order_addresses.'
+}
+
+Table wishlists [headercolor: #4C6EF5] {
+  id uuid [pk]
+  customer_id uuid [not null, ref: > customers.id]
+  name varchar(120) [not null]
+  is_public boolean [not null]
+  created_at timestamptz [not null]
+}
+
+Table wishlist_items [headercolor: #4C6EF5] {
+  wishlist_id uuid [not null, ref: > wishlists.id]
+  variant_id uuid [not null, ref: > product_variants.id]
+  added_at timestamptz [not null]
+
+  indexes {
+    (wishlist_id, variant_id) [pk]
+  }
+}
+
+Table product_reviews [headercolor: #4C6EF5] {
+  id uuid [pk]
+  product_id uuid [not null, ref: > products.id]
+  customer_id uuid [not null, ref: > customers.id]
+  rating smallint [not null]
+  title varchar(160)
+  body text
+  status review_status [not null]
+  created_at timestamptz [not null]
+
+  indexes {
+    (product_id, status)
+    (product_id, customer_id) [unique]
+  }
+  Note: 'One review per customer per product. rating is constrained to 1-5 by a check constraint.'
+}
+
+// ---------------------------------------------------------------- catalog
+
+Table brands [headercolor: #7048E8] {
+  id uuid [pk]
+  name varchar(120) [not null, unique]
+  slug varchar(140) [not null, unique]
+  description text
+}
+
+Table categories [headercolor: #7048E8] {
+  id uuid [pk]
+  parent_id uuid [ref: > categories.id]
+  name varchar(120) [not null]
+  slug varchar(140) [not null, unique]
+  position integer [not null]
+  Note: 'Self-referencing tree. parent_id null means a top-level department.'
+}
+
+Table products [headercolor: #7048E8] {
+  id uuid [pk]
+  brand_id uuid [ref: > brands.id]
+  title varchar(255) [not null]
+  slug varchar(280) [not null, unique]
+  description text
+  status product_status [not null]
+  published_at timestamptz
+  created_at timestamptz [not null]
+
+  indexes {
+    (status, published_at)
+  }
+  Note: 'The marketing-level item. Nothing is bought or stocked at this level, only at product_variants.'
+}
+
+Table product_categories [headercolor: #7048E8] {
+  product_id uuid [not null, ref: > products.id]
+  category_id uuid [not null, ref: > categories.id]
+
+  indexes {
+    (product_id, category_id) [pk]
+  }
+  Note: 'A product may sit in several categories.'
+}
+
+Table product_options [headercolor: #7048E8] {
+  id uuid [pk]
+  product_id uuid [not null, ref: > products.id]
+  name varchar(60) [not null]
+  position integer [not null]
+
+  indexes {
+    (product_id, name) [unique]
+  }
+  Note: 'The axes a product varies on, e.g. Size and Colour.'
+}
+
+Table product_option_values [headercolor: #7048E8] {
+  id uuid [pk]
+  option_id uuid [not null, ref: > product_options.id]
+  value varchar(80) [not null]
+  position integer [not null]
+
+  indexes {
+    (option_id, value) [unique]
+  }
+  Note: 'The allowed values on one axis, e.g. Small, Medium, Large.'
+}
+
+Table product_variants [headercolor: #7048E8] {
+  id uuid [pk]
+  product_id uuid [not null, ref: > products.id]
+  sku varchar(64) [not null, unique]
+  barcode varchar(64)
+  price_cents integer [not null]
+  compare_at_cents integer
+  currency char(3) [not null]
+  weight_grams integer
+  requires_shipping boolean [not null]
+  is_active boolean [not null]
+
+  indexes {
+    (product_id, is_active)
+  }
+  Note: 'The sellable, stockable unit. Carts, orders and inventory all reference this, never products.'
+}
+
+Table variant_option_values [headercolor: #7048E8] {
+  variant_id uuid [not null, ref: > product_variants.id]
+  option_value_id uuid [not null, ref: > product_option_values.id]
+
+  indexes {
+    (variant_id, option_value_id) [pk]
+  }
+  Note: 'Pins a variant to one value per option. Medium plus Blue resolves to exactly one variant.'
+}
+
+Table product_images [headercolor: #7048E8] {
+  id uuid [pk]
+  product_id uuid [not null, ref: > products.id]
+  variant_id uuid [ref: > product_variants.id]
+  url varchar(500) [not null]
+  alt_text varchar(255)
+  position integer [not null]
+  Note: 'variant_id null means the image belongs to the product as a whole.'
+}
+
+// -------------------------------------------------------------- inventory
+
+Table warehouses [headercolor: #0CA678] {
+  id uuid [pk]
+  name varchar(120) [not null]
+  code varchar(20) [not null, unique]
+  country_code char(2) [not null]
+  is_active boolean [not null]
+}
+
+Table inventory_items [headercolor: #0CA678] {
+  id uuid [pk]
+  variant_id uuid [not null, ref: > product_variants.id]
+  warehouse_id uuid [not null, ref: > warehouses.id]
+  on_hand integer [not null]
+  reserved integer [not null]
+  reorder_point integer
+
+  indexes {
+    (variant_id, warehouse_id) [unique]
+  }
+  Note: 'Sellable stock is on_hand minus reserved. Reserved rises when an order is placed, on_hand falls when it ships.'
+}
+
+Table inventory_movements [headercolor: #0CA678] {
+  id uuid [pk]
+  inventory_item_id uuid [not null, ref: > inventory_items.id]
+  type inventory_movement_type [not null]
+  quantity integer [not null]
+  reference_type varchar(40)
+  reference_id uuid
+  occurred_at timestamptz [not null]
+
+  indexes {
+    (inventory_item_id, occurred_at)
+  }
+  Note: 'Append-only ledger. quantity is signed. inventory_items.on_hand is the running total and can always be rebuilt from here.'
+}
+
+// ------------------------------------------------------------------- cart
+
+Table carts [headercolor: #FAB005] {
+  id uuid [pk]
+  customer_id uuid [ref: > customers.id]
+  session_token varchar(64) [unique]
+  status cart_status [not null]
+  currency char(3) [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+  Note: 'customer_id null is an anonymous cart, tracked by session_token until sign-in merges it.'
+}
+
+Table cart_items [headercolor: #FAB005] {
+  id uuid [pk]
+  cart_id uuid [not null, ref: > carts.id]
+  variant_id uuid [not null, ref: > product_variants.id]
+  quantity integer [not null]
+  added_at timestamptz [not null]
+
+  indexes {
+    (cart_id, variant_id) [unique]
+  }
+  Note: 'No price column on purpose. A cart always reprices against the live variant.'
+}
+
+// ----------------------------------------------------------------- orders
+
+Table orders [headercolor: #F76707] {
+  id uuid [pk]
+  customer_id uuid [not null, ref: > customers.id]
+  number varchar(32) [not null, unique]
+  guest_access_token_hash varchar(255)
+  status order_status [not null]
+  currency char(3) [not null]
+  subtotal_cents integer [not null]
+  discount_cents integer [not null]
+  shipping_cents integer [not null]
+  tax_cents integer [not null]
+  total_cents integer [not null]
+  placed_at timestamptz [not null]
+  cancelled_at timestamptz
+
+  indexes {
+    (customer_id, placed_at)
+    (status, placed_at)
+  }
+  Note: 'Every money column is a snapshot taken at placed_at. Totals are stored, not recomputed on read.'
+}
+
+Table order_lines [headercolor: #F76707] {
+  id uuid [pk]
+  order_id uuid [not null, ref: > orders.id]
+  variant_id uuid [not null, ref: > product_variants.id]
+  sku varchar(64) [not null]
+  title varchar(255) [not null]
+  variant_title varchar(255)
+  quantity integer [not null]
+  unit_price_cents integer [not null]
+  discount_cents integer [not null]
+  tax_cents integer [not null]
+  total_cents integer [not null]
+
+  indexes {
+    (order_id)
+  }
+  Note: 'sku and title are copied, not joined. A renamed product must not change what an old invoice says was bought.'
+}
+
+Table order_addresses [headercolor: #F76707] {
+  id uuid [pk]
+  order_id uuid [not null, ref: > orders.id]
+  type address_type [not null]
+  full_name varchar(120) [not null]
+  line1 varchar(255) [not null]
+  line2 varchar(255)
+  city varchar(120) [not null]
+  region varchar(120)
+  postal_code varchar(20) [not null]
+  country_code char(2) [not null]
+  phone varchar(32)
+
+  indexes {
+    (order_id, type) [unique]
+  }
+  Note: 'A frozen copy of the address at checkout. Editing the address book never rewrites shipping history.'
+}
+
+// ------------------------------------------------------------- fulfilment
+
+Table shipments [headercolor: #1C7ED6] {
+  id uuid [pk]
+  order_id uuid [not null, ref: > orders.id]
+  warehouse_id uuid [not null, ref: > warehouses.id]
+  status shipment_status [not null]
+  carrier varchar(80)
+  tracking_number varchar(120)
+  shipped_at timestamptz
+  delivered_at timestamptz
+
+  indexes {
+    (order_id)
+    (status)
+  }
+  Note: 'An order can ship in several parcels, from several warehouses.'
+}
+
+Table shipment_lines [headercolor: #1C7ED6] {
+  id uuid [pk]
+  shipment_id uuid [not null, ref: > shipments.id]
+  order_line_id uuid [not null, ref: > order_lines.id]
+  quantity integer [not null]
+
+  indexes {
+    (shipment_id, order_line_id) [unique]
+  }
+  Note: 'Quantities here sum to at most the matching order_line quantity. That is what makes partial shipment work.'
+}
+
+// ---------------------------------------------------------- reverse flow
+
+Table returns [headercolor: #E03131] {
+  id uuid [pk]
+  order_id uuid [not null, ref: > orders.id]
+  rma_number varchar(32) [not null, unique]
+  status return_status [not null]
+  reason varchar(255)
+  requested_at timestamptz [not null]
+  received_at timestamptz
+
+  indexes {
+    (order_id)
+  }
+}
+
+Table return_lines [headercolor: #E03131] {
+  id uuid [pk]
+  return_id uuid [not null, ref: > returns.id]
+  order_line_id uuid [not null, ref: > order_lines.id]
+  quantity integer [not null]
+  restock boolean [not null]
+  Note: 'restock false covers damaged goods, which come back but never re-enter sellable stock.'
+}
+
+Table refunds [headercolor: #E03131] {
+  id uuid [pk]
+  payment_id uuid [not null, ref: > payments.id]
+  return_id uuid [ref: > returns.id]
+  status refund_status [not null]
+  amount_cents integer [not null]
+  reason varchar(255)
+  processor_reference varchar(120)
+  created_at timestamptz [not null]
+  Note: 'Refunds are their own rows. Never subtract from payments.amount_cents.'
+}
+
+// ------------------------------------------------------------------ money
+
+Table payment_methods [headercolor: #2F9E44] {
+  id uuid [pk]
+  customer_id uuid [not null, ref: > customers.id]
+  brand varchar(40)
+  last4 char(4)
+  exp_month smallint
+  exp_year smallint
+  processor_token varchar(255) [not null]
+  is_default boolean [not null]
+  Note: 'Display fragments and a processor token only. Raw card data never touches this database.'
+}
+
+Table payments [headercolor: #2F9E44] {
+  id uuid [pk]
+  order_id uuid [not null, ref: > orders.id]
+  payment_method_id uuid [ref: > payment_methods.id]
+  status payment_status [not null]
+  amount_cents integer [not null]
+  currency char(3) [not null]
+  processor_reference varchar(120) [unique]
+  captured_at timestamptz
+
+  indexes {
+    (order_id, status)
+  }
+}
+
+// ------------------------------------------------------------- promotions
+
+Table discounts [headercolor: #AE3EC9] {
+  id uuid [pk]
+  code varchar(40) [not null, unique]
+  type discount_type [not null]
+  value integer [not null]
+  currency char(3)
+  minimum_spend_cents integer
+  usage_limit integer
+  used_count integer [not null]
+  starts_at timestamptz
+  ends_at timestamptz
+  is_active boolean [not null]
+  Note: 'value is a percentage for percentage type, otherwise minor units. currency only applies to fixed-amount discounts.'
+}
+
+Table discount_redemptions [headercolor: #AE3EC9] {
+  id uuid [pk]
+  discount_id uuid [not null, ref: > discounts.id]
+  order_id uuid [not null, ref: > orders.id]
+  customer_id uuid [not null, ref: > customers.id]
+  amount_cents integer [not null]
+  redeemed_at timestamptz [not null]
+
+  indexes {
+    (discount_id, order_id) [unique]
+    (discount_id, customer_id)
+  }
+  Note: 'The per-customer index is what enforces one-use-per-shopper promotions.'
+}
+
+Table gift_cards [headercolor: #AE3EC9] {
+  id uuid [pk]
+  code varchar(40) [not null, unique]
+  initial_balance_cents integer [not null]
+  balance_cents integer [not null]
+  currency char(3) [not null]
+  status gift_card_status [not null]
+  issued_to_customer_id uuid [ref: > customers.id]
+  expires_at timestamptz
+}
+
+Table gift_card_transactions [headercolor: #AE3EC9] {
+  id uuid [pk]
+  gift_card_id uuid [not null, ref: > gift_cards.id]
+  order_id uuid [ref: > orders.id]
+  amount_cents integer [not null]
+  occurred_at timestamptz [not null]
+
+  indexes {
+    (gift_card_id, occurred_at)
+  }
+  Note: 'Signed ledger, same shape as inventory_movements. balance_cents is the running total.'
+}
+
+// ------------------------------------------------------- shipping and tax
+
+Table shipping_zones [headercolor: #868E96] {
+  id uuid [pk]
+  name varchar(120) [not null]
+  country_codes text [not null]
+  Note: 'country_codes is a comma-separated or array column depending on your engine.'
+}
+
+Table shipping_rates [headercolor: #868E96] {
+  id uuid [pk]
+  zone_id uuid [not null, ref: > shipping_zones.id]
+  name varchar(120) [not null]
+  price_cents integer [not null]
+  currency char(3) [not null]
+  min_order_cents integer
+  max_order_cents integer
+  min_weight_grams integer
+  max_weight_grams integer
+
+  indexes {
+    (zone_id)
+  }
+  Note: 'Null bounds mean unbounded. A free-shipping-over-X rule is price_cents 0 with min_order_cents set.'
+}
+
+Table tax_rates [headercolor: #868E96] {
+  id uuid [pk]
+  country_code char(2) [not null]
+  region varchar(120)
+  name varchar(120) [not null]
+  rate_basis_points integer [not null]
+
+  indexes {
+    (country_code, region)
+  }
+  Note: 'Basis points, so 8.25 percent is 825. Integer arithmetic all the way through.'
+}
+
+// ------------------------------------------------------------------ enums
+
+Enum user_status {
+  active
+  suspended
+  pending_verification
+  deactivated
+}
+
+Enum notification_type {
+  order
+  payment
+  shipment
+  return
+  promotion
+  account_security
+  system
+}
+
+Enum product_status {
+  draft
+  active
+  archived
+}
+
+Enum address_type {
+  billing
+  shipping
+}
+
+Enum review_status {
+  pending
+  published
+  rejected
+}
+
+Enum cart_status {
+  active
+  converted
+  abandoned
+}
+
+Enum order_status {
+  pending
+  paid
+  partially_fulfilled
+  fulfilled
+  cancelled
+  refunded
+}
+
+Enum shipment_status {
+  pending
+  in_transit
+  delivered
+  failed
+}
+
+Enum return_status {
+  requested
+  approved
+  received
+  rejected
+  closed
+}
+
+Enum payment_status {
+  pending
+  authorized
+  captured
+  failed
+  voided
+}
+
+Enum refund_status {
+  pending
+  succeeded
+  failed
+}
+
+Enum discount_type {
+  percentage
+  fixed_amount
+  free_shipping
+}
+
+Enum inventory_movement_type {
+  receipt
+  sale
+  return
+  adjustment
+  transfer
+}
+
+Enum gift_card_status {
+  active
+  redeemed
+  expired
+  cancelled
+}
