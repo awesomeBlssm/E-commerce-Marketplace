@@ -6,6 +6,9 @@
 //   2. Anything a customer agreed to is snapshotted at order time. A later
 //      price, address or product edit must never rewrite an existing order.
 //
+// The application database is MySQL. timestamptz below represents a timezone-aware
+// logical timestamp; the Laravel MySQL migrations implement these as timestamps.
+//
 // Card colors group the model by zone:
 //   indigo  shopper       violet  catalog      teal    inventory
 //   yellow  cart          orange  orders       blue    fulfilment
@@ -20,12 +23,13 @@ Table users [headercolor: #4C6EF5] {
   password_hash varchar(255)
   email_verified_at timestamptz
   status user_status [not null]
+  type user_type [not null]
   last_login_at timestamptz
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
   deleted_at timestamptz
 
-  Note: 'Authentication/account identity. password_hash is null for accounts authenticated exclusively through an external provider.'
+  Note: 'Authentication/account identity. type controls user, seller, and admin authorization. password_hash is null for accounts authenticated exclusively through an external provider.'
 }
 
 Table user_sessions [headercolor: #4C6EF5] {
@@ -131,7 +135,8 @@ Table customers [headercolor: #4C6EF5] {
   phone varchar(32)
   accepts_marketing boolean [not null]
   created_at timestamptz [not null]
-  Note: 'One row per shopper. Guest checkout still creates a customer, flagged by a null password elsewhere in your auth store.'
+  updated_at timestamptz [not null]
+  Note: 'One row per shopper linked to users for registered accounts. The nullable user_id also supports guest customers when guest checkout is enabled.'
 }
 
 Table customer_addresses [headercolor: #4C6EF5] {
@@ -208,6 +213,7 @@ Table categories [headercolor: #7048E8] {
 Table products [headercolor: #7048E8] {
   id uuid [pk]
   brand_id uuid [ref: > brands.id]
+  seller_id uuid [ref: > users.id]
   title varchar(255) [not null]
   slug varchar(280) [not null, unique]
   description text
@@ -218,7 +224,7 @@ Table products [headercolor: #7048E8] {
   indexes {
     (status, published_at)
   }
-  Note: 'The marketing-level item. Nothing is bought or stocked at this level, only at product_variants.'
+  Note: 'The marketing-level item. seller_id identifies the owning seller. Nothing is bought or stocked at this level, only at product_variants.'
 }
 
 Table product_categories [headercolor: #7048E8] {
@@ -342,7 +348,7 @@ Table carts [headercolor: #FAB005] {
   currency char(3) [not null]
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
-  Note: 'customer_id null is an anonymous cart, tracked by session_token until sign-in merges it.'
+  Note: 'customer_id null is an anonymous cart, tracked by session_token until sign-in merges it. The current API requires authentication; guest-cart routes can be added later.'
 }
 
 Table cart_items [headercolor: #FAB005] {
@@ -619,6 +625,12 @@ Enum user_status {
   suspended
   pending_verification
   deactivated
+}
+
+Enum user_type {
+  user
+  seller
+  admin
 }
 
 Enum notification_type {
