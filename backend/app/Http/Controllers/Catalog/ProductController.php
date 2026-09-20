@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Catalog;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Models\Catalog\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

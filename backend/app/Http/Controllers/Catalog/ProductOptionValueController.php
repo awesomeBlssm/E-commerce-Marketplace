@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Catalog;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Models\ProductOption;
-use App\Models\ProductOptionValue;
+use App\Models\Catalog\Product;
+use App\Models\Catalog\ProductOption;
+use App\Models\Catalog\ProductOptionValue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

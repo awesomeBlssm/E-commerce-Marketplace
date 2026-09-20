@@ -3,9 +3,8 @@
 namespace App\Models\Shopper;
 
 use App\Models\Catalog\Product;
-
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 
 class ProductReview extends Model
 {

@@ -3,9 +3,8 @@
 namespace App\Models\Shopper;
 
 use App\Models\Catalog\ProductVariant;
-
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 
 class Wishlist extends Model
 {

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Catalog;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Models\Product;
+use App\Models\Catalog\Category;
+use App\Models\Catalog\Product;
 use Illuminate\Http\JsonResponse;
 
 class ProductCategoryController extends Controller

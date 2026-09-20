@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Shopper;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Models\ProductReview;
+use App\Models\Catalog\Product;
+use App\Models\Shopper\ProductReview;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

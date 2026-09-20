@@ -3,7 +3,6 @@
 namespace App\Models\Shopper;
 
 use App\Models\Catalog\ProductVariant;
-
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class WishlistItem extends Pivot

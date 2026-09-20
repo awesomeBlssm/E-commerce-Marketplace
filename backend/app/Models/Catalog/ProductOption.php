@@ -2,22 +2,20 @@
 
 namespace App\Models\Catalog;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 
-class ProductImage extends Model
+class ProductOption extends Model
 {
     use HasUuids;
 
-    protected $table = 'product_images';
+    protected $table = 'product_options';
 
     public $timestamps = false;
 
     protected $fillable = [
         'product_id',
-        'variant_id',
-        'url',
-        'alt_text',
+        'name',
         'position',
     ];
 
@@ -33,8 +31,8 @@ class ProductImage extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function variant()
+    public function values()
     {
-        return $this->belongsTo(ProductVariant::class);
+        return $this->hasMany(ProductOptionValue::class, 'option_id');
     }
 }

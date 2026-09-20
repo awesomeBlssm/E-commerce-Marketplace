@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Shopper;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
-use App\Models\Wishlist;
+use App\Models\Shopper\Customer;
+use App\Models\Shopper\Wishlist;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

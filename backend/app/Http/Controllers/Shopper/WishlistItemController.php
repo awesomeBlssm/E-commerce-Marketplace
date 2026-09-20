@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Shopper;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProductVariant;
-use App\Models\Wishlist;
-use App\Models\WishlistItem;
+use App\Models\Catalog\ProductVariant;
+use App\Models\Shopper\Wishlist;
+use App\Models\Shopper\WishlistItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
