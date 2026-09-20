@@ -1,0 +1,104 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.imageLink {
+  display: block;
+  overflow: hidden;
+  background: var(--surface-2);
+  aspect-ratio: 4/3;
+  position: relative;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.card:hover .image {
+  transform: scale(1.05);
+}
+
+.imageFallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: var(--surface-2);
+}
+
+/* Only show fallback when image is absent or errors */
+.imageLink img + .imageFallback {
+  display: none;
+}
+
+.body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
+}
+
+.brand {
+  align-self: flex-start;
+}
+
+.titleLink {
+  text-decoration: none;
+}
+
+.title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--transition-fast);
+}
+
+.titleLink:hover .title {
+  color: var(--text-brand);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.pricing {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.priceLabel {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.price {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-brand);
+  letter-spacing: -0.02em;
+}
+
+.pricePlaceholder {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-style: italic;
+}

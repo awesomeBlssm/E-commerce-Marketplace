@@ -1,0 +1,243 @@
+.page {
+  padding-block: var(--space-10);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding-bottom: var(--space-8);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-8);
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-400), var(--accent-400));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.name {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.email {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+.badges {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* ── Two-column grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.leftCol, .rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+}
+
+.sectionTitle {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.orderCount {
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--space-3) var(--space-2);
+}
+
+.dl dt {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.dl dd {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.quickLinks {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* ── Order list ── */
+.ordersLoading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  padding: var(--space-4) 0;
+}
+
+.ordersError {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--danger);
+  font-size: var(--text-sm);
+  padding: var(--space-4);
+  background: rgba(220,53,69,0.06);
+  border-radius: var(--radius-lg);
+}
+
+.ordersEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.ordersEmpty span {
+  font-size: 2.5rem;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.orderCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.orderCard:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--brand-300);
+}
+
+.orderCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  gap: var(--space-3);
+}
+
+.orderNumber {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  display: block;
+}
+
+.orderDate {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.orderCardBody {
+  padding: var(--space-3) var(--space-4);
+}
+
+.orderMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.orderTotal {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.orderPagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.pageInfo {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  flex: 1;
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .badges {
+    justify-content: center;
+  }
+
+  .dl {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .dl dd {
+    margin-bottom: var(--space-2);
+  }
+}
