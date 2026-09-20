@@ -5,3 +5,4 @@ require __DIR__.'/api/catalog.php';
 require __DIR__.'/api/variants.php';
 require __DIR__.'/api/inventory.php';
 require __DIR__.'/api/cart.php';
+require __DIR__.'/api/orders.php';
