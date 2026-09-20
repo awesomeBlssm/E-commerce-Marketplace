@@ -2,6 +2,8 @@
 
 namespace App\Models\Order;
 
+use App\Models\Fulfillment\Shipment;
+use App\Models\ReverseFlow\ReturnRequest;
 use App\Models\Shopper\Customer;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -56,5 +58,15 @@ class Order extends Model
     public function addresses()
     {
         return $this->hasMany(OrderAddress::class);
+    }
+
+    public function shipments()
+    {
+        return $this->hasMany(Shipment::class);
+    }
+
+    public function returns()
+    {
+        return $this->hasMany(ReturnRequest::class, 'order_id');
     }
 }
