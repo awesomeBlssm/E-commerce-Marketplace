@@ -38,6 +38,8 @@ Route::middleware('auth.api')->group(function () {
     Route::apiResource('products.reviews', ProductReviewController::class)
         ->only(['store'])
         ->shallow();
+});
+Route::middleware(['auth.api', 'resource.owner:review'])->group(function () {
     Route::apiResource('reviews', ProductReviewController::class)
         ->only(['show', 'update', 'destroy']);
 });

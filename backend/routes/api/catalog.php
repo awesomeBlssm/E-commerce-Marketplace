@@ -27,10 +27,19 @@ Route::middleware(['auth.api', 'user.type:seller,admin', 'resource.owner:product
 
 Route::get('products/{product}/categories', [ProductCategoryController::class, 'index'])
     ->name('products.categories.index');
-Route::post('products/{product}/categories/{category}', [ProductCategoryController::class, 'store'])
-    ->name('products.categories.store');
-Route::delete('products/{product}/categories/{category}', [ProductCategoryController::class, 'destroy'])
-    ->name('products.categories.destroy');
+Route::middleware(['auth.api', 'user.type:seller,admin', 'resource.owner:product'])->group(function () {
+    Route::post('products/{product}/categories/{category}', [ProductCategoryController::class, 'store'])
+        ->name('products.categories.store');
+    Route::delete('products/{product}/categories/{category}', [ProductCategoryController::class, 'destroy'])
+        ->name('products.categories.destroy');
+});
 
-Route::apiResource('products.options', ProductOptionController::class);
-Route::apiResource('products.options.values', ProductOptionValueController::class);
+Route::apiResource('products.options', ProductOptionController::class)->only(['index', 'show']);
+Route::apiResource('products.options.values', ProductOptionValueController::class)->only(['index', 'show']);
+
+Route::middleware(['auth.api', 'user.type:seller,admin', 'resource.owner:product'])->group(function () {
+    Route::apiResource('products.options', ProductOptionController::class)
+        ->only(['store', 'update', 'destroy']);
+    Route::apiResource('products.options.values', ProductOptionValueController::class)
+        ->only(['store', 'update', 'destroy']);
+});

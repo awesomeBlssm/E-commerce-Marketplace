@@ -10,14 +10,33 @@ use Illuminate\Http\Request;
 /** Manages customer and anonymous carts while preserving live variant pricing. */
 class CartController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Cart::query()->withCount('items')->latest('updated_at')->paginate());
+        $query = Cart::query()->withCount('items')->latest('updated_at');
+
+        if ($request->user()->type !== 'admin') {
+            $customerId = $request->user()->customer?->id;
+            $query->where('customer_id', $customerId);
+        }
+
+        return response()->json($query->paginate());
     }
 
     public function store(Request $request): JsonResponse
     {
-        $cart = Cart::create($this->validated($request));
+        $customer = $request->user()->customer;
+
+        if (! $customer) {
+            return response()->json(['message' => 'A customer profile is required to create a cart.'], 422);
+        }
+
+        $cart = Cart::create([
+            'customer_id' => $customer->id,
+            'status' => 'active',
+            'currency' => $request->validate([
+                'currency' => ['required', 'string', 'size:3'],
+            ])['currency'],
+        ]);
 
         return response()->json($cart, 201);
     }
@@ -29,7 +48,10 @@ class CartController extends Controller
 
     public function update(Request $request, Cart $cart): JsonResponse
     {
-        $cart->update($this->validated($request, true));
+        $cart->update($request->validate([
+            'status' => ['sometimes', 'in:active,converted,abandoned'],
+            'currency' => ['sometimes', 'string', 'size:3'],
+        ]));
 
         return response()->json($cart->fresh());
     }
@@ -39,17 +61,5 @@ class CartController extends Controller
         $cart->delete();
 
         return response()->json(null, 204);
-    }
-
-    private function validated(Request $request, bool $partial = false): array
-    {
-        $required = $partial ? 'sometimes' : 'required';
-
-        return $request->validate([
-            'customer_id' => ['sometimes', 'nullable', 'uuid', 'exists:customers,id'],
-            'session_token' => ['sometimes', 'nullable', 'string', 'max:64', 'unique:carts,session_token'.($partial ? ','.$request->route('cart')->id : '')],
-            'status' => [$required, 'in:active,converted,abandoned'],
-            'currency' => [$required, 'string', 'size:3'],
-        ]);
     }
 }

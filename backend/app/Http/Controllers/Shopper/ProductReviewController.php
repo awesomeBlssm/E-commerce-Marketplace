@@ -22,14 +22,20 @@ class ProductReviewController extends Controller
     public function store(Request $request, Product $product): JsonResponse
     {
         $data = $request->validate([
-            'customer_id' => ['required', 'uuid', 'exists:customers,id'],
             'rating' => ['required', 'integer', 'between:1,5'],
             'title' => ['nullable', 'string', 'max:160'],
             'body' => ['nullable', 'string'],
         ]);
 
+        $customer = $request->user()->customer;
+
+        if (! $customer) {
+            return response()->json(['message' => 'A customer profile is required to submit a review.'], 422);
+        }
+
         $review = $product->reviews()->create([
             ...$data,
+            'customer_id' => $customer->id,
             'status' => 'pending',
         ]);
 
