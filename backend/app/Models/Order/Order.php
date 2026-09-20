@@ -4,6 +4,8 @@ namespace App\Models\Order;
 
 use App\Models\Fulfillment\Shipment;
 use App\Models\Money\Payment;
+use App\Models\Promotion\DiscountRedemption;
+use App\Models\Promotion\GiftCardTransaction;
 use App\Models\ReverseFlow\ReturnRequest;
 use App\Models\Shopper\Customer;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -74,5 +76,15 @@ class Order extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function discountRedemptions()
+    {
+        return $this->hasMany(DiscountRedemption::class);
+    }
+
+    public function giftCardTransactions()
+    {
+        return $this->hasMany(GiftCardTransaction::class);
     }
 }
