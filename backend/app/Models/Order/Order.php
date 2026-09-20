@@ -3,6 +3,7 @@
 namespace App\Models\Order;
 
 use App\Models\Fulfillment\Shipment;
+use App\Models\Money\Payment;
 use App\Models\ReverseFlow\ReturnRequest;
 use App\Models\Shopper\Customer;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -68,5 +69,10 @@ class Order extends Model
     public function returns()
     {
         return $this->hasMany(ReturnRequest::class, 'order_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 }

@@ -8,3 +8,5 @@ require __DIR__.'/api/cart.php';
 require __DIR__.'/api/orders.php';
 require __DIR__.'/api/fulfillment.php';
 require __DIR__.'/api/reverse-flow.php';
+require __DIR__.'/api/money.php';
+require __DIR__.'/api/shipping.php';

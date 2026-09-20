@@ -2,6 +2,7 @@
 
 namespace App\Models\ReverseFlow;
 
+use App\Models\Money\Payment;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -35,5 +36,10 @@ class Refund extends Model
     public function returnRequest()
     {
         return $this->belongsTo(ReturnRequest::class, 'return_id');
+    }
+
+    public function payment()
+    {
+        return $this->belongsTo(Payment::class);
     }
 }

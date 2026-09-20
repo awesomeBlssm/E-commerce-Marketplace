@@ -2,6 +2,7 @@
 
 namespace App\Models\Shopper;
 
+use App\Models\Money\PaymentMethod;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -49,5 +50,10 @@ class Customer extends Model
     public function reviews()
     {
         return $this->hasMany(ProductReview::class);
+    }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
     }
 }
