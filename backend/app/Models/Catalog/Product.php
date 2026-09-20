@@ -3,12 +3,14 @@
 namespace App\Models\Catalog;
 
 use App\Models\Shopper\ProductReview;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     protected $table = 'products';
 
@@ -16,6 +18,7 @@ class Product extends Model
 
     protected $fillable = [
         'brand_id',
+        'seller_id',
         'title',
         'slug',
         'description',
@@ -35,6 +38,11 @@ class Product extends Model
     public function brand()
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'seller_id');
     }
 
     public function categories()

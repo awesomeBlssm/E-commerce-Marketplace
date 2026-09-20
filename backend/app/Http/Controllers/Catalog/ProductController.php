@@ -20,7 +20,13 @@ class ProductController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $product = Product::create($this->validated($request));
+        $data = $this->validated($request);
+
+        if ($request->user()->type === 'seller') {
+            $data['seller_id'] = $request->user()->id;
+        }
+
+        $product = Product::create($data);
 
         return response()->json($product, 201);
     }
@@ -32,7 +38,13 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product): JsonResponse
     {
-        $product->update($this->validated($request, true));
+        $data = $this->validated($request, true);
+
+        if ($request->user()->type === 'seller') {
+            $data['seller_id'] = $request->user()->id;
+        }
+
+        $product->update($data);
 
         return response()->json($product->fresh());
     }
@@ -50,6 +62,7 @@ class ProductController extends Controller
 
         return $request->validate([
             'brand_id' => ['sometimes', 'nullable', 'uuid', 'exists:brands,id'],
+            'seller_id' => ['sometimes', 'nullable', 'uuid', 'exists:users,id'],
             'title' => [$required, 'string', 'max:255'],
             'slug' => [$required, 'string', 'max:280', 'unique:products,slug'.($partial ? ','.$request->route('product')->id : '')],
             'description' => ['sometimes', 'nullable', 'string'],

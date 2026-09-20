@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
 
             $table->uuid('brand_id')->nullable();
+            $table->uuid('seller_id')->nullable();
 
             $table->string('title', 255);
             $table->string('slug', 280)->unique();
@@ -29,6 +30,11 @@ return new class extends Migration
             $table->foreign('brand_id')
                 ->references('id')
                 ->on('brands')
+                ->nullOnDelete();
+
+            $table->foreign('seller_id')
+                ->references('id')
+                ->on('users')
                 ->nullOnDelete();
 
             $table->index([

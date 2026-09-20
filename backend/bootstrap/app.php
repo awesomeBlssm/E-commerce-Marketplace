@@ -3,6 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\AuthenticateApiToken;
+use App\Http\Middleware\EnsureUserType;
+use App\Http\Middleware\EnsureResourceOwner;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'auth.api' => AuthenticateApiToken::class,
+            'user.type' => EnsureUserType::class,
+            'resource.owner' => EnsureResourceOwner::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

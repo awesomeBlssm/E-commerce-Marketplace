@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->uuid('id')->primary();
 
-            $table->foreignId('user_id')
+            $table->foreignUuid('user_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();

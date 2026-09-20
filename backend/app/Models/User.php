@@ -7,11 +7,16 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Catalog\Product;
+use App\Models\Shopper\Customer;
+use App\Models\Auth\UserSession;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -19,9 +24,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
         'email',
-        'password',
+        'password_hash',
+        'status',
+        'type',
+        'last_login_at',
     ];
 
     /**
@@ -31,6 +38,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'password_hash',
         'remember_token',
     ];
 
@@ -43,7 +51,32 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    public function getAuthPassword(): string
+    {
+        return (string) $this->password_hash;
+    }
+
+    public function getAuthPasswordName(): string
+    {
+        return 'password_hash';
+    }
+
+    public function sessions()
+    {
+        return $this->hasMany(UserSession::class);
+    }
+
+    public function customer()
+    {
+        return $this->hasOne(Customer::class);
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'seller_id');
     }
 }

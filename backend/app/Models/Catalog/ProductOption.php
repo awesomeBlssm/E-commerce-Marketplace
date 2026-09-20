@@ -3,11 +3,12 @@
 namespace App\Models\Catalog;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductOption extends Model
 {
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     protected $table = 'product_options';
 
