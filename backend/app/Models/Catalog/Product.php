@@ -65,9 +65,19 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function activeVariants()
+    {
+        return $this->hasMany(ProductVariant::class)->where('is_active', true);
+    }
+
     public function images()
     {
         return $this->hasMany(ProductImage::class);
+    }
+
+    public function firstImage()
+    {
+        return $this->hasOne(ProductImage::class)->orderBy('position');
     }
 
     public function reviews()

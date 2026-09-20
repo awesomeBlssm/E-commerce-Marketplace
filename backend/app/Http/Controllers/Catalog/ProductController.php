@@ -9,13 +9,27 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Product::query()
-            ->with(['brand', 'categories'])
+        $query = Product::query()
+            ->with([
+                'brand',
+                'categories',
+                'activeVariants:id,product_id,price_cents,compare_at_cents,currency,is_active',
+                'firstImage:id,product_id,url,alt_text,position',
+            ])
             ->withCount(['variants', 'reviews'])
-            ->latest('created_at')
-            ->paginate());
+            ->where('status', 'active')
+            ->whereNotNull('published_at');
+
+        if ($request->filled('category')) {
+            $category = $request->query('category');
+            $query->whereHas('categories', function ($q) use ($category) {
+                $q->where('name', $category)->orWhere('slug', $category);
+            });
+        }
+
+        return response()->json($query->latest('created_at')->paginate());
     }
 
     public function store(Request $request): JsonResponse

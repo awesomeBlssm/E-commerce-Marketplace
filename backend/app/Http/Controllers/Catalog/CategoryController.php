@@ -9,13 +9,21 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Category::query()
+        $query = Category::query()
             ->with(['parent', 'children'])
-            ->withCount('products')
-            ->orderBy('position')
-            ->paginate());
+            ->withCount('products');
+
+        if ($request->query('sort') === 'products_count' || $request->boolean('top')) {
+            $query->orderByDesc('products_count')->orderBy('position');
+        } else {
+            $query->orderBy('position');
+        }
+
+        $perPage = $request->integer('per_page', 50);
+
+        return response()->json($query->paginate($perPage));
     }
 
     public function store(Request $request): JsonResponse
