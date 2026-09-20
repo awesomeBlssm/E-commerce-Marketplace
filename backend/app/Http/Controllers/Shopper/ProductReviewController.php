@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Http\Controllers\Shopper;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\ProductReview;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class ProductReviewController extends Controller
+{
+    public function index(Product $product): JsonResponse
+    {
+        return response()->json($product->reviews()
+            ->where('status', 'published')
+            ->with('customer:id,full_name')
+            ->latest('created_at')
+            ->paginate());
+    }
+
+    public function store(Request $request, Product $product): JsonResponse
+    {
+        $data = $request->validate([
+            'customer_id' => ['required', 'uuid', 'exists:customers,id'],
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'title' => ['nullable', 'string', 'max:160'],
+            'body' => ['nullable', 'string'],
+        ]);
+
+        $review = $product->reviews()->create([
+            ...$data,
+            'status' => 'pending',
+        ]);
+
+        return response()->json($review, 201);
+    }
+
+    public function show(ProductReview $review): JsonResponse
+    {
+        return response()->json($review->load(['product', 'customer']));
+    }
+
+    public function update(Request $request, ProductReview $review): JsonResponse
+    {
+        $review->update($request->validate([
+            'rating' => ['sometimes', 'integer', 'between:1,5'],
+            'title' => ['sometimes', 'nullable', 'string', 'max:160'],
+            'body' => ['sometimes', 'nullable', 'string'],
+        ]));
+
+        return response()->json($review->fresh());
+    }
+
+    public function destroy(ProductReview $review): JsonResponse
+    {
+        $review->delete();
+
+        return response()->json(null, 204);
+    }
+}
