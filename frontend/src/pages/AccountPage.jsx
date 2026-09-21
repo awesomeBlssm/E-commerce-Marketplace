@@ -667,12 +667,18 @@ export default function AccountPage() {
           {activeTab === 'orders' && (
           <div className={styles.ordersPanel} role="tabpanel" aria-label="Order history">
             <section className={styles.section} aria-labelledby="order-history">
-              <h2 id="order-history" className={styles.sectionTitle}>
-                Order History
-                {pagination && (
-                  <span className={styles.orderCount}>{pagination.total} order{pagination.total !== 1 ? 's' : ''}</span>
-                )}
-              </h2>
+              <div className={styles.ordersHeader}>
+                <h2 id="order-history" className={[styles.sectionTitle, styles.removeMargin]}>
+                  Order History
+                  {pagination && (
+                    <span className={styles.orderCount}>{pagination.total} order{pagination.total !== 1 ? 's' : ''}</span>
+                  )}
+                </h2>
+                
+                <Link className="btn btn-ghost" to="/orders">
+                  All orders
+                </Link>
+              </div>
 
               {ordersLoading && (
                 <div className={styles.ordersLoading}>
