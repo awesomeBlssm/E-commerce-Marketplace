@@ -43,7 +43,7 @@ class CartController extends Controller
 
     public function show(Cart $cart): JsonResponse
     {
-        return response()->json($cart->load('items.variant'));
+        return response()->json($cart->load('items.variant.images', 'items.variant.product.images'));
     }
 
     public function update(Request $request, Cart $cart): JsonResponse

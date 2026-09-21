@@ -221,8 +221,8 @@ export default function ProductDetailPage() {
                     <label className={styles.optionLabel}>{opt.name}</label>
                     <div className={styles.optionValues}>
                       {opt.values?.map((val) => (
-                        <button key={val.id} className={styles.optionValue} title={val.label}>
-                          {val.label}
+                        <button key={val.id} className={styles.optionValue} title={val.value}>
+                          {val.value}
                         </button>
                       ))}
                     </div>

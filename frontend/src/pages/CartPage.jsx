@@ -116,8 +116,8 @@ export default function CartPage() {
           <div className={styles.itemsList}>
             {items.map((item) => {
               const variant = item.variant;
-              const imageUrl = variant?.images?.[0]?.url;
-
+              const imageUrl = variant?.images?.[0]?.url ?? variant?.product?.images?.[0]?.url;
+              console.log('Rendering cart item:', item.id, 'variant:', variant?.sku, 'imageUrl:', imageUrl);
               return (
                 <div key={item.id} className={styles.cartItem}>
                   <div className={styles.itemImage}>
@@ -196,9 +196,6 @@ export default function CartPage() {
               </div>
             </div>
 
-            <p className={styles.summaryNote}>
-              ℹ️ Final prices, taxes, shipping, and discounts are calculated at checkout by the server.
-            </p>
 
             <Link
               id="proceed-to-checkout"
