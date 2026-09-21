@@ -226,7 +226,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Value props ── */}
-      <section className={styles.valuePropSection} aria-label="Why Blossom Market">
+      <section className={styles.valuePropSection} aria-label="Why Marketline">
         <div className="container">
           <div className={styles.valueProps}>
             {[

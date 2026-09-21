@@ -28,7 +28,7 @@
 .orb1 {
   width: 480px;
   height: 480px;
-  background: radial-gradient(circle, hsl(274, 75%, 62%), transparent 70%);
+  background: radial-gradient(circle, hsl(211, 42%, 53%), transparent 70%);
   top: -120px;
   right: -80px;
   animation: drift1 8s ease-in-out infinite;
@@ -37,7 +37,7 @@
 .orb2 {
   width: 360px;
   height: 360px;
-  background: radial-gradient(circle, hsl(336, 75%, 60%), transparent 70%);
+  background: radial-gradient(circle, hsl(38, 88%, 56%), transparent 70%);
   bottom: -80px;
   left: 10%;
   animation: drift2 10s ease-in-out infinite;
@@ -72,7 +72,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-6);
-  max-width: 680px;
+  max-width: 1020px;
 }
 
 .heroEyebrow {

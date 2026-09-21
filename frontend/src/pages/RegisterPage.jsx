@@ -49,7 +49,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(fields);
-      toast.success('Account created! Welcome to Blossom Market.');
+      toast.success('Account created! Welcome to Marketline.');
       navigate('/', { replace: true });
 
     } catch (err) {
@@ -71,9 +71,9 @@ export default function RegisterPage() {
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <span className={styles.logoMark}>✿</span>
+          <span className={styles.logoMark}>M</span>
           <h1 className={styles.title}>Create your account</h1>
-          <p className={styles.subtitle}>Join Blossom Market and start shopping</p>
+          <p className={styles.subtitle}>Join Marketline and start shopping</p>
         </div>
 
         <form id="register-form" onSubmit={handleSubmit} className={styles.form} noValidate>

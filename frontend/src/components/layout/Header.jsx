@@ -47,9 +47,8 @@ export default function Header() {
     <header className={styles.header} role="banner">
       <div className={`container ${styles.inner}`}>
         {/* Logo */}
-        <Link to="/" className={styles.logo} aria-label="Blossom Market home">
-          <span className={styles.logoMark}>✿</span>
-          <span className={styles.logoText}>Blossom Market</span>
+        <Link to="/" className={styles.logo} aria-label="Marketline home">
+          <span className={styles.logoText}>Marketline</span>
         </Link>
 
         {/* Main nav */}

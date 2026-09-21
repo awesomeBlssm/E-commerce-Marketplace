@@ -7,8 +7,7 @@ export default function Footer() {
     <footer className={styles.footer} role="contentinfo">
       <div className={`container ${styles.inner}`}>
         <div className={styles.brand}>
-          <span className={styles.logoMark}>✿</span>
-          <span className={styles.logoText}>Blossom Market</span>
+          <span className={styles.logoText}>Marketline</span>
           <p className={styles.tagline}>Discover amazing products from top sellers</p>
         </div>
 
@@ -37,7 +36,7 @@ export default function Footer() {
       <div className={styles.bottom}>
         <div className="container">
           <p className={styles.copy}>
-            &copy; {year} Blossom Market. All rights reserved.
+            &copy; {year} Marketline. All rights reserved.
           </p>
         </div>
       </div>

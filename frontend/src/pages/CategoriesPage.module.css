@@ -10,7 +10,7 @@
 }
 
 [data-theme='dark'] .hero {
-  background: linear-gradient(135deg, hsl(274 30% 12%) 0%, var(--surface) 100%);
+  background: linear-gradient(135deg, hsl(214 28% 12%) 0%, var(--surface) 100%);
 }
 
 .heroContent {
