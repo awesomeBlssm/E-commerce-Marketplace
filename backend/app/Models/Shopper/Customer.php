@@ -24,6 +24,15 @@ class Customer extends Model
         'phone',
         'accepts_marketing',
         'created_at',
+        'full_name_updated_at',
+        'email_updated_at',
+        'phone_updated_at',
+    ];
+
+    protected $appends = [
+        'full_name_locked_until',
+        'email_locked_until',
+        'phone_locked_until',
     ];
 
     protected function casts(): array
@@ -31,7 +40,37 @@ class Customer extends Model
         return [
             'accepts_marketing' => 'boolean',
             'created_at' => 'datetime',
+            'full_name_updated_at' => 'datetime',
+            'email_updated_at' => 'datetime',
+            'phone_updated_at' => 'datetime',
         ];
+    }
+
+    public function getFullNameLockedUntilAttribute(): ?string
+    {
+        if (! $this->full_name_updated_at) {
+            return null;
+        }
+        $unlockDate = $this->full_name_updated_at->copy()->addDays(30);
+        return $unlockDate->isFuture() ? $unlockDate->toISOString() : null;
+    }
+
+    public function getEmailLockedUntilAttribute(): ?string
+    {
+        if (! $this->email_updated_at) {
+            return null;
+        }
+        $unlockDate = $this->email_updated_at->copy()->addDays(30);
+        return $unlockDate->isFuture() ? $unlockDate->toISOString() : null;
+    }
+
+    public function getPhoneLockedUntilAttribute(): ?string
+    {
+        if (! $this->phone_updated_at) {
+            return null;
+        }
+        $unlockDate = $this->phone_updated_at->copy()->addDays(30);
+        return $unlockDate->isFuture() ? $unlockDate->toISOString() : null;
     }
 
     public function user()
