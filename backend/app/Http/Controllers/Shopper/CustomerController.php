@@ -35,8 +35,16 @@ class CustomerController extends Controller
 
     public function update(Request $request, Customer $customer): JsonResponse
     {
-        $customer->update($request->validate([
-            'email' => ['sometimes', 'email', 'max:255'],
+        $userId = $customer->user_id;
+
+        $validated = $request->validate([
+            'email' => [
+                'sometimes',
+                'required',
+                'email',
+                'max:255',
+                $userId ? Rule::unique('users', 'email')->ignore($userId) : Rule::unique('users', 'email'),
+            ],
             'full_name' => ['sometimes', 'nullable', 'string', 'max:120'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:32'],
             'accepts_marketing' => ['sometimes', 'boolean'],
