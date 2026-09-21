@@ -226,26 +226,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Value props ── */}
-      <section className={styles.valuePropSection} aria-label="Why Marketline">
-        <div className="container">
-          <div className={styles.valueProps}>
-            {[
-              { icon: '🚚', title: 'Free Shipping', desc: 'On orders over $50' },
-              { icon: '🔒', title: 'Secure Checkout', desc: '256-bit SSL encryption' },
-              { icon: '↩️', title: 'Easy Returns', desc: '30-day return policy' },
-              { icon: '💬', title: '24/7 Support', desc: 'We\'re always here to help' },
-            ].map((vp) => (
-              <div key={vp.title} className={styles.valueProp}>
-                <span className={styles.vpIcon}>{vp.icon}</span>
-                <div>
-                  <h3 className={styles.vpTitle}>{vp.title}</h3>
-                  <p className={styles.vpDesc}>{vp.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 }
