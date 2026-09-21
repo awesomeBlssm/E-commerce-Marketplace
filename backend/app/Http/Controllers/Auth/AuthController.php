@@ -17,11 +17,15 @@ class AuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
+        if ($request->has('phone')) {
+            $request->merge(['phone' => preg_replace('/[\s\-]/', '', (string) $request->input('phone')) ?: null]);
+        }
+
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'full_name' => ['nullable', 'string', 'max:120'],
-            'phone' => ['nullable', 'string', 'max:32'],
+            'phone' => ['nullable', 'string', 'regex:/^(\+?[0-9]{10,15})$/', 'unique:customers,phone'],
             'accepts_marketing' => ['sometimes', 'boolean'],
         ]);
 
