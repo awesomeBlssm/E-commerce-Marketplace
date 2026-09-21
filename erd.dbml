@@ -145,6 +145,8 @@ Table customer_addresses [headercolor: #4C6EF5] {
   type address_type [not null]
   line1 varchar(255) [not null]
   line2 varchar(255)
+  province varchar(120)
+  barangay varchar(120)
   city varchar(120) [not null]
   region varchar(120)
   postal_code varchar(20) [not null]

@@ -13,6 +13,7 @@ function normalizeUser(raw) {
   return {
     id: raw.id,
     email: raw.email,
+    avatar_url: raw.avatar_url ?? null,
     type: raw.type ?? 'user',
     status: raw.status ?? 'active',
     customer: raw.customer ?? null,

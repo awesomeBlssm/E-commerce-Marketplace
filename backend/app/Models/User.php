@@ -3,12 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use App\Models\Catalog\Product;
 use App\Models\Shopper\Customer;
 use App\Models\Auth\UserSession;
@@ -25,6 +25,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'email',
+        'avatar_path',
         'password_hash',
         'status',
         'type',
@@ -54,6 +55,17 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
         ];
     }
+
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->avatar_path
+                ? rtrim((string) config('filesystems.disks.public.url'), '/').'/'.ltrim($this->avatar_path, '/')
+                : null,
+        );
+    }
+
+    protected $appends = ['avatar_url'];
 
     public function getAuthPassword(): string
     {

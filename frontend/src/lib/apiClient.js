@@ -57,7 +57,7 @@ async function request(path, options = {}) {
 
   // Build headers
   const headers = {
-    'Content-Type': 'application/json',
+    ...(fetchOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     Accept: 'application/json',
     ...extraHeaders,
   };
@@ -123,7 +123,7 @@ const api = {
   post: (path, body, options = {}) =>
     request(path, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body: body instanceof FormData ? body : JSON.stringify(body),
       ...options,
     }),
 

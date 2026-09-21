@@ -52,6 +52,8 @@ class CustomerAddressController extends Controller
             'line1' => [$required, 'string', 'max:255'],
             'line2' => ['sometimes', 'nullable', 'string', 'max:255'],
             'city' => [$required, 'string', 'max:120'],
+            'province' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'barangay' => ['sometimes', 'nullable', 'string', 'max:120'],
             'region' => ['sometimes', 'nullable', 'string', 'max:120'],
             'postal_code' => [$required, 'string', 'max:20'],
             'country_code' => [$required, 'string', 'size:2'],
