@@ -48,9 +48,19 @@ class CustomerController extends Controller
             'full_name' => ['sometimes', 'nullable', 'string', 'max:120'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:32'],
             'accepts_marketing' => ['sometimes', 'boolean'],
-        ]));
+        ]);
 
-        return response()->json($customer->fresh());
+        DB::transaction(function () use ($customer, $validated) {
+            $customer->update($validated);
+
+            if (isset($validated['email']) && $customer->user) {
+                $customer->user->update([
+                    'email' => $validated['email'],
+                ]);
+            }
+        });
+
+        return response()->json($customer->fresh(['user']));
     }
 
     public function destroy(Customer $customer): JsonResponse
