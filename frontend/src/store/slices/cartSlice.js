@@ -5,7 +5,7 @@ import api from '../../lib/apiClient';
 // Helper — get or create the user's active cart
 // Reads variant currency from the variant being added if creating.
 // -------------------------------------------------------------------
-async function getOrCreateCart(currency = 'USD') {
+async function getOrCreateCart(currency = 'PHP') {
   // Try existing carts first
   const listData = await api.get('/carts');
   const existing = listData?.data?.find((c) => c.status === 'active');
@@ -54,7 +54,7 @@ export const fetchCartWithItems = createAsyncThunk(
  */
 export const addItemToCart = createAsyncThunk(
   'cart/addItemToCart',
-  async ({ variantId, quantity = 1, currency = 'USD' }, { getState, rejectWithValue }) => {
+  async ({ variantId, quantity = 1, currency = 'PHP' }, { getState, rejectWithValue }) => {
     try {
       // Use existing cart from state or get/create one
       let cart = getState().cart.cart;

@@ -12,8 +12,8 @@ import {
 } from '../store/slices/ordersSlice';
 import styles from './AccountPage.module.css';
 
-function formatPrice(cents, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(cents / 100);
+function formatPrice(cents, currency = 'PHP') {
+  return new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(cents / 100);
 }
 
 function formatDate(iso) {

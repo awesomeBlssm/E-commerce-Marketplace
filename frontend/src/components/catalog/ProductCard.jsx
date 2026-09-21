@@ -6,8 +6,8 @@ import styles from './ProductCard.module.css';
  * @param {number} cents
  * @param {string} currency
  */
-function formatPrice(cents, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+function formatPrice(cents, currency = 'PHP') {
+  return new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,

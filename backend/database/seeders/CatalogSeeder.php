@@ -95,8 +95,8 @@ class CatalogSeeder extends Seeder
                     ['sku' => sprintf('DEMO-%03d-%d', $productNumber, $variantIndex + 1)],
                     [
                         'product_id' => $product->id,
-                        'price_cents' => 4999 + ($index * 500),
-                        'currency' => 'USD',
+                        'price_cents' => 499999 + ($index * 500),
+                        'currency' => 'PHP',
                         'weight_grams' => 500,
                         'requires_shipping' => true,
                         'is_active' => true,

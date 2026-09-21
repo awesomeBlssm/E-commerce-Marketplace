@@ -7,8 +7,8 @@ import api from '../lib/apiClient';
 import { addItemToCart, selectCartLoading } from '../store/slices/cartSlice';
 import styles from './ProductDetailPage.module.css';
 
-function formatPrice(cents, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+function formatPrice(cents, currency = 'PHP') {
+  return new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
@@ -84,7 +84,7 @@ export default function ProductDetailPage() {
         addItemToCart({
           variantId: selectedVariant.id,
           quantity,
-          currency: selectedVariant.currency ?? 'USD',
+          currency: selectedVariant.currency ?? 'PHP',
         })
       ).unwrap();
       toast.success(`"${product?.title}" added to cart!`);
