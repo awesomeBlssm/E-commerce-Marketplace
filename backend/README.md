@@ -35,6 +35,7 @@ From the `backend` directory:
 ```powershell
 composer install
 Copy-Item .env.example .env
+composer dump-autoload
 php artisan key:generate
 ```
 
