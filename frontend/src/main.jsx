@@ -10,11 +10,14 @@ import './index.css';
 import AccountPage from './pages/AccountPage.jsx';
 import CartPage from './pages/CartPage.jsx';
 import CategoriesPage from './pages/CategoriesPage.jsx';
+import CheckoutPage from './pages/CheckoutPage.jsx';
 import ErrorPage from './pages/ErrorPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ProductDetailPage from './pages/ProductDetailPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import OrderDetailPage from './pages/OrderDetailPage.jsx';
+import OrdersPage from './pages/OrdersPage.jsx';
 import ProtectedRoute from './components/routing/ProtectedRoute.jsx';
 import store from './store/index.js';
 
@@ -34,6 +37,30 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CartPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'checkout',
+        element: (
+          <ProtectedRoute>
+            <CheckoutPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders',
+        element: (
+          <ProtectedRoute>
+            <OrdersPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders/:id',
+        element: (
+          <ProtectedRoute>
+            <OrderDetailPage />
           </ProtectedRoute>
         ),
       },

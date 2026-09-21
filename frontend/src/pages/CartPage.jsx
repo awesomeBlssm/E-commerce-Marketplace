@@ -229,7 +229,7 @@ export default function CartPage() {
 
             <Link
               id="proceed-to-checkout"
-              to="/"
+              to="/checkout"
               className="btn btn-primary"
               style={{ marginTop: 'var(--space-4)', width: '100%', justifyContent: 'center' }}
             >

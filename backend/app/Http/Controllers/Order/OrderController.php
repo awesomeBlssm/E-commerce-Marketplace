@@ -42,6 +42,8 @@ class OrderController extends Controller
             'addresses.*.line1' => ['required', 'string', 'max:255'],
             'addresses.*.line2' => ['sometimes', 'nullable', 'string', 'max:255'],
             'addresses.*.city' => ['required', 'string', 'max:120'],
+            'addresses.*.province' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'addresses.*.barangay' => ['sometimes', 'nullable', 'string', 'max:120'],
             'addresses.*.region' => ['sometimes', 'nullable', 'string', 'max:120'],
             'addresses.*.postal_code' => ['required', 'string', 'max:20'],
             'addresses.*.country_code' => ['required', 'string', 'size:2'],
