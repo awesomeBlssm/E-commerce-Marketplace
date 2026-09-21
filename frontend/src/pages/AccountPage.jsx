@@ -25,6 +25,26 @@ function formatDate(iso) {
   });
 }
 
+function isFieldLocked(lockedUntil) {
+  if (!lockedUntil) return false;
+  return new Date(lockedUntil).getTime() > Date.now();
+}
+
+function formatLockDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function daysRemaining(iso) {
+  if (!iso) return 0;
+  const diff = new Date(iso).getTime() - Date.now();
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
 const STATUS_COLORS = {
   pending:    { bg: 'rgba(255,165,0,0.1)',  color: 'hsl(38,92%,35%)' },
   processing: { bg: 'rgba(59,130,246,0.1)', color: 'hsl(210,80%,45%)' },
@@ -113,6 +133,8 @@ export default function AccountPage() {
   const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
   const [avatarCropZoom, setAvatarCropZoom] = useState(1);
   const [avatarCroppedAreaPixels, setAvatarCroppedAreaPixels] = useState(null);
+  const [popupDetail, setPopupDetail] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
   const avatarInputRef = useRef(null);
 
   useEffect(() => {
@@ -282,18 +304,125 @@ export default function AccountPage() {
     }
   }
 
-  async function handleProfileSubmit(event) {
-    event.preventDefault();
+  const displayedCustomer = customerDetails ?? customer;
+  const isEmailLocked = isFieldLocked(displayedCustomer?.email_locked_until);
+  const isFullNameLocked = isFieldLocked(displayedCustomer?.full_name_locked_until);
+  const isPhoneLocked = isFieldLocked(displayedCustomer?.phone_locked_until);
+
+  function openFieldDetail(field) {
+    if (field === 'policy') {
+      setPopupDetail({
+        title: 'Monthly Account Update Policy',
+        policy: true,
+      });
+      return;
+    }
+
+    const fieldMap = {
+      email: {
+        title: 'Email Address Restriction',
+        label: 'Email address',
+        value: displayedCustomer?.email ?? user?.email ?? '',
+        locked: isEmailLocked,
+        lastUpdated: displayedCustomer?.email_updated_at,
+        lockedUntil: displayedCustomer?.email_locked_until,
+        description:
+          'Your email address is your primary marketplace login. For account security, you can only update your email address once every 30 days.',
+      },
+      full_name: {
+        title: 'Full Name Restriction',
+        label: 'Full name',
+        value: displayedCustomer?.full_name ?? '',
+        locked: isFullNameLocked,
+        lastUpdated: displayedCustomer?.full_name_updated_at,
+        lockedUntil: displayedCustomer?.full_name_locked_until,
+        description:
+          'Your full name appears on your invoices, seller transactions, and order receipts. To prevent impersonation and fraud, it can only be changed once every 30 days.',
+      },
+      phone: {
+        title: 'Contact Number Restriction',
+        label: 'Contact number',
+        value: displayedCustomer?.phone ?? '',
+        locked: isPhoneLocked,
+        lastUpdated: displayedCustomer?.phone_updated_at,
+        lockedUntil: displayedCustomer?.phone_locked_until,
+        description:
+          'Your contact number must be unique in the system and is used for delivery coordination. It can only be changed once every 30 days.',
+      },
+    };
+
+    setPopupDetail(fieldMap[field] ?? null);
+  }
+
+  async function executeProfileSubmit() {
     setProfileSaving(true);
     try {
-      const updated = await api.patch(`/customers/${customer.id}`, profileForm);
+      const payload = {
+        ...profileForm,
+        phone: profileForm.phone ? profileForm.phone.replace(/[\s\-]/g, '') : '',
+      };
+      const updated = await api.patch(`/customers/${customer.id}`, payload);
       setCustomerDetails(updated);
       await refreshUser();
+      setConfirmModal(null);
       toast.success('Customer details updated.');
     } catch (err) {
-      toast.error(err.message ?? 'Failed to update customer details.');
+      const fieldError =
+        err.errors?.full_name?.[0] ||
+        err.errors?.email?.[0] ||
+        err.errors?.phone?.[0] ||
+        err.message;
+      toast.error(fieldError ?? 'Failed to update customer details.');
     } finally {
       setProfileSaving(false);
+    }
+  }
+
+  function handleProfileSubmit(event) {
+    event.preventDefault();
+
+    if (profileForm.phone && profileForm.phone.trim()) {
+      const sanitizedPhone = profileForm.phone.replace(/[\s\-]/g, '');
+      const phoneRegex = /^(\+?[0-9]{10,15})$/;
+      if (!phoneRegex.test(sanitizedPhone)) {
+        toast.error('Please enter a valid contact number with 10 to 15 digits (e.g. 09171234567 or +639171234567).');
+        return;
+      }
+    }
+
+    const changed = [];
+    const origEmail = user?.email ?? displayedCustomer?.email ?? '';
+    const origFullName = displayedCustomer?.full_name ?? '';
+    const origPhone = displayedCustomer?.phone ?? '';
+
+    if (profileForm.email.trim() !== origEmail.trim()) {
+      changed.push({
+        label: 'Email address',
+        oldVal: origEmail || '(none)',
+        newVal: profileForm.email.trim(),
+      });
+    }
+    if (profileForm.full_name.trim() !== origFullName.trim()) {
+      changed.push({
+        label: 'Full name',
+        oldVal: origFullName || '(none)',
+        newVal: profileForm.full_name.trim() || '(empty)',
+      });
+    }
+    if ((profileForm.phone || '').trim() !== origPhone.trim()) {
+      changed.push({
+        label: 'Contact number',
+        oldVal: origPhone || '(none)',
+        newVal: (profileForm.phone || '').trim() || '(empty)',
+      });
+    }
+
+    if (changed.length > 0) {
+      setConfirmModal({
+        changedFields: changed,
+      });
+    } else {
+      executeProfileSubmit();
     }
   }
 
@@ -397,7 +526,6 @@ export default function AccountPage() {
   if (!user) return null;
 
   const { email, type, status } = user;
-  const displayedCustomer = customerDetails ?? customer;
 
   return (
     <div className="container">
@@ -506,37 +634,155 @@ export default function AccountPage() {
             {/* Customer profile */}
             {customer && (
               <section className={styles.section} aria-labelledby="customer-profile">
+                <div className={styles.policyBanner}>
+                  <span className={styles.policyBannerIcon}>ℹ️</span>
+                  <div className={styles.policyBannerText}>
+                    <strong>Monthly Update Policy:</strong> Full name, email, and contact number can each only be updated <strong>once every 30 days</strong> and must be unique in the system.
+                    <button
+                      type="button"
+                      className={styles.policyBannerBtn}
+                      onClick={() => openFieldDetail('policy')}
+                    >
+                      View Policy Details
+                    </button>
+                  </div>
+                </div>
+
                 <h2 id="customer-profile" className={styles.sectionTitle}>Customer Profile</h2>
                 <form className={styles.form} onSubmit={handleProfileSubmit}>
+                  {/* Email Field */}
                   <label className={styles.field}>
-                    <span>Email address</span>
+                    <div className={styles.fieldHeader}>
+                      <span className={styles.fieldTitleGroup}>
+                        <span>Email address</span>
+                        <button
+                          type="button"
+                          className={styles.infoBtn}
+                          onClick={() => openFieldDetail('email')}
+                          title="View email update policy and cooldown"
+                          aria-label="Email update policy"
+                        >
+                          ℹ️
+                        </button>
+                      </span>
+                      {isEmailLocked ? (
+                        <span
+                          className={styles.lockBadge}
+                          onClick={() => openFieldDetail('email')}
+                          style={{ cursor: 'pointer' }}
+                          title="Click for lock details"
+                        >
+                          🔒 Locked until {formatLockDate(displayedCustomer.email_locked_until)}
+                        </span>
+                      ) : (
+                        <span className={styles.unlockedBadge}>✓ Ready to edit</span>
+                      )}
+                    </div>
                     <input
-                      className="form-input"
+                      className={`form-input ${isEmailLocked ? styles.inputLocked : ''}`}
                       type="email"
                       required
+                      disabled={isEmailLocked}
                       value={profileForm.email}
                       onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })}
                       maxLength={255}
+                      onClick={() => isEmailLocked && openFieldDetail('email')}
                     />
+                    {isEmailLocked && (
+                      <span className={styles.fieldHint}>
+                        Available to update on {formatLockDate(displayedCustomer.email_locked_until)} ({daysRemaining(displayedCustomer.email_locked_until)} days left).
+                      </span>
+                    )}
                   </label>
+
+                  {/* Full Name Field */}
                   <label className={styles.field}>
-                    <span>Full name</span>
+                    <div className={styles.fieldHeader}>
+                      <span className={styles.fieldTitleGroup}>
+                        <span>Full name</span>
+                        <button
+                          type="button"
+                          className={styles.infoBtn}
+                          onClick={() => openFieldDetail('full_name')}
+                          title="View full name update policy and cooldown"
+                          aria-label="Full name update policy"
+                        >
+                          ℹ️
+                        </button>
+                      </span>
+                      {isFullNameLocked ? (
+                        <span
+                          className={styles.lockBadge}
+                          onClick={() => openFieldDetail('full_name')}
+                          style={{ cursor: 'pointer' }}
+                          title="Click for lock details"
+                        >
+                          🔒 Locked until {formatLockDate(displayedCustomer.full_name_locked_until)}
+                        </span>
+                      ) : (
+                        <span className={styles.unlockedBadge}>✓ Ready to edit</span>
+                      )}
+                    </div>
                     <input
-                      className="form-input"
+                      className={`form-input ${isFullNameLocked ? styles.inputLocked : ''}`}
+                      disabled={isFullNameLocked}
                       value={profileForm.full_name}
                       onChange={(event) => setProfileForm({ ...profileForm, full_name: event.target.value })}
                       maxLength={120}
+                      onClick={() => isFullNameLocked && openFieldDetail('full_name')}
                     />
+                    {isFullNameLocked && (
+                      <span className={styles.fieldHint}>
+                        Available to update on {formatLockDate(displayedCustomer.full_name_locked_until)} ({daysRemaining(displayedCustomer.full_name_locked_until)} days left).
+                      </span>
+                    )}
                   </label>
+
+                  {/* Phone Field */}
                   <label className={styles.field}>
-                    <span>Phone</span>
+                    <div className={styles.fieldHeader}>
+                      <span className={styles.fieldTitleGroup}>
+                        <span>Contact number (Phone)</span>
+                        <button
+                          type="button"
+                          className={styles.infoBtn}
+                          onClick={() => openFieldDetail('phone')}
+                          title="View contact number update policy and cooldown"
+                          aria-label="Contact number update policy"
+                        >
+                          ℹ️
+                        </button>
+                      </span>
+                      {isPhoneLocked ? (
+                        <span
+                          className={styles.lockBadge}
+                          onClick={() => openFieldDetail('phone')}
+                          style={{ cursor: 'pointer' }}
+                          title="Click for lock details"
+                        >
+                          🔒 Locked until {formatLockDate(displayedCustomer.phone_locked_until)}
+                        </span>
+                      ) : (
+                        <span className={styles.unlockedBadge}>✓ Ready to edit</span>
+                      )}
+                    </div>
                     <input
-                      className="form-input"
+                      className={`form-input ${isPhoneLocked ? styles.inputLocked : ''}`}
+                      type="tel"
+                      disabled={isPhoneLocked}
+                      placeholder="+63 9XX XXX XXXX or 09XXXXXXXXX"
                       value={profileForm.phone}
                       onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })}
                       maxLength={32}
+                      onClick={() => isPhoneLocked && openFieldDetail('phone')}
                     />
+                    <span className={styles.fieldHint}>
+                      {isPhoneLocked
+                        ? `Available to update on ${formatLockDate(displayedCustomer.phone_locked_until)} (${daysRemaining(displayedCustomer.phone_locked_until)} days left).`
+                        : '10 to 15 digits (e.g. 09171234567 or +639171234567). Must be unique in the database.'}
+                    </span>
                   </label>
+
                   <label className={styles.checkboxField}>
                     <input
                       type="checkbox"
@@ -545,6 +791,7 @@ export default function AccountPage() {
                     />
                     <span>Receive marketing updates</span>
                   </label>
+
                   <button className="btn btn-primary btn-sm" type="submit" disabled={profileSaving}>
                     {profileSaving ? 'Saving…' : 'Save Details'}
                   </button>
@@ -769,6 +1016,201 @@ export default function AccountPage() {
           </div>
           )}
         </div>
+
+        {/* ── Field / Policy Detail Popup Modal ── */}
+        {popupDetail && (
+          <div
+            className={styles.modalBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="popup-detail-title"
+            onClick={(e) => e.target === e.currentTarget && setPopupDetail(null)}
+          >
+            <div className={styles.modalDialog}>
+              <div className={styles.modalHeader}>
+                <h3 id="popup-detail-title" className={styles.modalTitle}>
+                  {popupDetail.policy ? '📋 Monthly Update Policy' : popupDetail.locked ? '🔒 Field Locked' : 'ℹ️ Account Detail Policy'}
+                </h3>
+                <button
+                  type="button"
+                  className={styles.modalCloseBtn}
+                  onClick={() => setPopupDetail(null)}
+                  aria-label="Close dialog"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className={styles.modalBody}>
+                {popupDetail.policy ? (
+                  <>
+                    <p>
+                      To ensure security and identity verification across transactions, the following account details can only be changed <strong>once every 30 days</strong>:
+                    </p>
+                    <div className={styles.modalDetailList}>
+                      <div className={styles.modalDetailRow}>
+                        <span className={styles.modalDetailLabel}>Full Name:</span>
+                        <span className={styles.modalDetailValue}>
+                          {isFullNameLocked
+                            ? `🔒 Locked until ${formatLockDate(displayedCustomer.full_name_locked_until)}`
+                            : '✓ Available to edit'}
+                        </span>
+                      </div>
+                      <div className={styles.modalDetailRow}>
+                        <span className={styles.modalDetailLabel}>Email Address:</span>
+                        <span className={styles.modalDetailValue}>
+                          {isEmailLocked
+                            ? `🔒 Locked until ${formatLockDate(displayedCustomer.email_locked_until)}`
+                            : '✓ Available to edit'}
+                        </span>
+                      </div>
+                      <div className={styles.modalDetailRow}>
+                        <span className={styles.modalDetailLabel}>Contact Number:</span>
+                        <span className={styles.modalDetailValue}>
+                          {isPhoneLocked
+                            ? `🔒 Locked until ${formatLockDate(displayedCustomer.phone_locked_until)}`
+                            : '✓ Available to edit'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.modalWarning}>
+                      <span>⚠️</span>
+                      <span>
+                        Each contact number and email address must be unique in the whole database. Duplicate values will be rejected.
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>{popupDetail.description}</p>
+                    <div className={styles.modalDetailList}>
+                      <div className={styles.modalDetailRow}>
+                        <span className={styles.modalDetailLabel}>Field:</span>
+                        <span className={styles.modalDetailValue}>{popupDetail.label}</span>
+                      </div>
+                      <div className={styles.modalDetailRow}>
+                        <span className={styles.modalDetailLabel}>Status:</span>
+                        <span className={styles.modalDetailValue}>
+                          {popupDetail.locked ? '🔒 Locked (Cooldown active)' : '✓ Available to edit'}
+                        </span>
+                      </div>
+                      {popupDetail.lastUpdated && (
+                        <div className={styles.modalDetailRow}>
+                          <span className={styles.modalDetailLabel}>Last updated:</span>
+                          <span className={styles.modalDetailValue}>{formatLockDate(popupDetail.lastUpdated)}</span>
+                        </div>
+                      )}
+                      {popupDetail.lockedUntil && (
+                        <div className={styles.modalDetailRow}>
+                          <span className={styles.modalDetailLabel}>Next available update:</span>
+                          <span className={styles.modalDetailValue}>
+                            {formatLockDate(popupDetail.lockedUntil)} ({daysRemaining(popupDetail.lockedUntil)} days left)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {popupDetail.locked ? (
+                      <div className={styles.modalWarning}>
+                        <span>🔒</span>
+                        <span>
+                          This field cannot be edited until the 30-day cooldown expires. If you need urgent assistance, please contact customer support.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className={styles.modalWarning}>
+                        <span>⚠️</span>
+                        <span>
+                          Saving a change to this field will start a new 30-day cooldown period.
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setPopupDetail(null)}
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Confirmation Modal before saving 30-day locked fields ── */}
+        {confirmModal && (
+          <div
+            className={styles.modalBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-save-title"
+            onClick={(e) => e.target === e.currentTarget && !profileSaving && setConfirmModal(null)}
+          >
+            <div className={styles.modalDialog}>
+              <div className={styles.modalHeader}>
+                <h3 id="confirm-save-title" className={styles.modalTitle}>
+                  ⚠️ Confirm 30-Day Locked Update
+                </h3>
+                <button
+                  type="button"
+                  className={styles.modalCloseBtn}
+                  onClick={() => setConfirmModal(null)}
+                  disabled={profileSaving}
+                  aria-label="Close dialog"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className={styles.modalBody}>
+                <p>
+                  You are updating details that have a <strong>30-day cooldown policy</strong>. Once saved, these fields cannot be modified again for a full month:
+                </p>
+
+                <ul className={styles.changeList}>
+                  {confirmModal.changedFields.map((change) => (
+                    <li key={change.label} className={styles.changeItem}>
+                      <span className={styles.changeItemLabel}>{change.label}</span>
+                      <span className={styles.changeItemDiff}>
+                        <s>{change.oldVal}</s> ➔ <strong>{change.newVal}</strong>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className={styles.modalWarning}>
+                  <span>ℹ️</span>
+                  <span>
+                    The new values will be locked until <strong>{formatLockDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())}</strong>. Are you sure you want to proceed?
+                  </span>
+                </div>
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setConfirmModal(null)}
+                  disabled={profileSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={executeProfileSubmit}
+                  disabled={profileSaving}
+                >
+                  {profileSaving ? 'Saving…' : 'Confirm & Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
