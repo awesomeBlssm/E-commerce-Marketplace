@@ -78,7 +78,7 @@ function StatusBadge({ status }) {
 }
 
 export default function AccountPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const customer = user?.customer ?? null;
   const dispatch = useDispatch();
   const toast = useToast();
@@ -90,6 +90,7 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('details');
   const [customerDetails, setCustomerDetails] = useState(customer ?? null);
   const [profileForm, setProfileForm] = useState({
+    email: user?.email ?? customer?.email ?? '',
     full_name: customer?.full_name ?? '',
     phone: customer?.phone ?? '',
     accepts_marketing: customer?.accepts_marketing ?? false,
@@ -196,6 +197,7 @@ export default function AccountPage() {
 
     setCustomerDetails(customer);
     setProfileForm({
+      email: user?.email ?? customer.email ?? '',
       full_name: customer.full_name ?? '',
       phone: customer.phone ?? '',
       accepts_marketing: customer.accepts_marketing ?? false,
@@ -210,7 +212,7 @@ export default function AccountPage() {
       })
       .catch((err) => toast.error(err.message ?? 'Failed to load addresses.'))
       .finally(() => setAddressesLoading(false));
-  }, [customer, toast]);
+  }, [customer, user, toast]);
 
   async function handleLogout() {
     await logout();
@@ -270,6 +272,7 @@ export default function AccountPage() {
       formData.append('avatar', croppedFile);
       const response = await api.post('/auth/avatar', formData);
       setAvatarUrl(response.avatar_url ?? null);
+      await refreshUser();
       closeAvatarCrop();
       toast.success('Profile photo updated.');
     } catch (err) {
@@ -285,6 +288,7 @@ export default function AccountPage() {
     try {
       const updated = await api.patch(`/customers/${customer.id}`, profileForm);
       setCustomerDetails(updated);
+      await refreshUser();
       toast.success('Customer details updated.');
     } catch (err) {
       toast.error(err.message ?? 'Failed to update customer details.');
@@ -504,6 +508,17 @@ export default function AccountPage() {
               <section className={styles.section} aria-labelledby="customer-profile">
                 <h2 id="customer-profile" className={styles.sectionTitle}>Customer Profile</h2>
                 <form className={styles.form} onSubmit={handleProfileSubmit}>
+                  <label className={styles.field}>
+                    <span>Email address</span>
+                    <input
+                      className="form-input"
+                      type="email"
+                      required
+                      value={profileForm.email}
+                      onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })}
+                      maxLength={255}
+                    />
+                  </label>
                   <label className={styles.field}>
                     <span>Full name</span>
                     <input
