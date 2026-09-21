@@ -85,13 +85,19 @@ Seeders are repeatable. `CatalogSeeder` creates demo brands, categories, product
 
 ## Authentication
 
-Registration and login return an opaque bearer token. Only the SHA-256 token hash is stored in `user_sessions`.
+Registration and login set an opaque `HttpOnly` cookie. Only the SHA-256 token hash is stored in `user_sessions`; the token is not returned to JavaScript.
 
 ```http
-Authorization: Bearer YOUR_TOKEN
 Accept: application/json
 Content-Type: application/json
+Cookie: auth_token=...
 ```
+
+The frontend must send API requests with credentials enabled. In production, set
+`SESSION_SECURE_COOKIE=true` and serve the frontend and API over HTTPS. The
+default `SameSite=Lax` setting should be changed to `none` only when the
+frontend and API are on different sites, and then `SESSION_SECURE_COOKIE` must
+also be `true`.
 
 ### Authentication endpoints
 

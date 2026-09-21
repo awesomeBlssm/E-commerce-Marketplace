@@ -46,9 +46,7 @@ class AuthController extends Controller
 
         return response()->json([
             'user' => $result[0]->load('customer'),
-            'token' => $result[2],
-            'token_type' => 'Bearer',
-        ], 201);
+        ], 201)->withCookie($this->authCookie($result[2]));
     }
 
     public function login(Request $request): JsonResponse
@@ -70,11 +68,11 @@ class AuthController extends Controller
 
         $user->forceFill(['last_login_at' => now()])->save();
 
+        $token = $this->issueToken($user, $request);
+
         return response()->json([
             'user' => $user->load('customer'),
-            'token' => $this->issueToken($user, $request),
-            'token_type' => 'Bearer',
-        ]);
+        ])->withCookie($this->authCookie($token));
     }
 
     public function me(Request $request): JsonResponse
@@ -88,7 +86,23 @@ class AuthController extends Controller
             'revoked_at' => now(),
         ])->save();
 
-        return response()->json(['message' => 'Signed out successfully.']);
+        return response()->json(['message' => 'Signed out successfully.'])
+            ->withCookie(cookie()->forget(config('auth.api_cookie')));
+    }
+
+    private function authCookie(string $token): \Symfony\Component\HttpFoundation\Cookie
+    {
+        return cookie(
+            config('auth.api_cookie'),
+            $token,
+            config('auth.api_cookie_minutes'),
+            config('session.path', '/'),
+            config('session.domain'),
+            (bool) config('session.secure', false),
+            true,
+            false,
+            config('session.same_site', 'lax'),
+        );
     }
 
     private function issueToken(User $user, Request $request): string

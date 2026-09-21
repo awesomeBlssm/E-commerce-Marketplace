@@ -12,7 +12,7 @@ class AuthenticateApiToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $plainToken = $request->bearerToken();
+        $plainToken = $request->cookie(config('auth.api_cookie')) ?? $request->bearerToken();
 
         if (! $plainToken) {
             return response()->json(['message' => 'Authentication required.'], 401);
@@ -26,7 +26,8 @@ class AuthenticateApiToken
             ->first();
 
         if (! $session || ! $session->user || $session->user->trashed()) {
-            return response()->json(['message' => 'Invalid or expired authentication token.'], 401);
+            return response()->json(['message' => 'Invalid or expired authentication token.'], 401)
+                ->withCookie(cookie()->forget(config('auth.api_cookie')));
         }
 
         $session->forceFill(['last_used_at' => now()])->save();

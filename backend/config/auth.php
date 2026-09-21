@@ -114,4 +114,7 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    'api_cookie' => env('AUTH_API_COOKIE', 'auth_token'),
+    'api_cookie_minutes' => env('AUTH_API_COOKIE_MINUTES', 60 * 24 * 30),
+
 ];

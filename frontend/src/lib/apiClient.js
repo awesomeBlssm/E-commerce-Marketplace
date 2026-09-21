@@ -32,17 +32,6 @@ export class ApiError extends Error {
 }
 
 // -------------------------------------------------------------------
-// Token helpers (opaque bearer token stored in localStorage)
-// -------------------------------------------------------------------
-
-const TOKEN_KEY = 'auth_token';
-
-export const tokenStorage = {
-  get: () => localStorage.getItem(TOKEN_KEY),
-  set: (token) => localStorage.setItem(TOKEN_KEY, token),
-  remove: () => localStorage.removeItem(TOKEN_KEY),
-};
-
 // -------------------------------------------------------------------
 // Core request function
 // -------------------------------------------------------------------
@@ -73,14 +62,13 @@ async function request(path, options = {}) {
     ...extraHeaders,
   };
 
-  const token = tokenStorage.get();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   let response;
   try {
-    response = await fetch(url, { ...fetchOptions, headers });
+    response = await fetch(url, {
+      ...fetchOptions,
+      credentials: 'include',
+      headers,
+    });
   } catch (err) {
     if (err.name === 'AbortError' || fetchOptions.signal?.aborted) {
       throw err;
@@ -101,11 +89,6 @@ async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    // 401 — token is invalid/expired; clear it
-    if (response.status === 401) {
-      tokenStorage.remove();
-    }
-
     const message =
       body?.message ??
       (response.status === 403
