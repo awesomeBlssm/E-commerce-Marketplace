@@ -89,6 +89,23 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // ------------------------------------------------------------------
+  // refresh user
+  // ------------------------------------------------------------------
+  const refreshUser = useCallback(async () => {
+    try {
+      const data = await api.get('/auth/me');
+      const normalized = normalizeUser(data);
+      setUser(normalized);
+      return normalized;
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setUser(null);
+      }
+      throw err;
+    }
+  }, []);
+
   const value = {
     user,
     isAuthenticated: user !== null,
@@ -97,6 +114,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
