@@ -220,6 +220,13 @@
   background: var(--brand-50);
 }
 
+.optionValueActive {
+  border-color: var(--brand-500);
+  color: var(--text-brand);
+  background: var(--brand-50);
+  box-shadow: 0 0 0 1px var(--brand-500);
+}
+
 .qtyGroup {
   display: flex;
   flex-direction: column;
