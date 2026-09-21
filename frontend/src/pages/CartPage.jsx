@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,7 @@ function formatPrice(cents, currency = 'PHP') {
 }
 
 export default function CartPage() {
+  const [deselectedItemIds, setDeselectedItemIds] = useState(() => new Set());
   const dispatch = useDispatch();
   const toast = useToast();
   const { isAuthenticated } = useAuth();
@@ -87,6 +88,15 @@ export default function CartPage() {
     );
   }
 
+  const selectedItems = items.filter((item) => !deselectedItemIds.has(item.id));
+  const totalCents = selectedItems.reduce(
+    (total, item) => total + (item.variant?.price_cents ?? 0) * item.quantity,
+    0,
+  );
+  const totalCurrency = selectedItems.find((item) => item.variant?.currency)?.variant?.currency
+    ?? cart.currency
+    ?? 'PHP';
+
   async function handleQtyChange(item, qty) {
     if (qty < 1) return;
     try {
@@ -117,9 +127,25 @@ export default function CartPage() {
             {items.map((item) => {
               const variant = item.variant;
               const imageUrl = variant?.images?.[0]?.url ?? variant?.product?.images?.[0]?.url;
-              console.log('Rendering cart item:', item.id, 'variant:', variant?.sku, 'imageUrl:', imageUrl);
               return (
                 <div key={item.id} className={styles.cartItem}>
+                  <input
+                    type="checkbox"
+                    className={styles.itemCheckbox}
+                    checked={!deselectedItemIds.has(item.id)}
+                    onChange={() => {
+                      setDeselectedItemIds((currentIds) => {
+                        const nextIds = new Set(currentIds);
+                        if (nextIds.has(item.id)) {
+                          nextIds.delete(item.id);
+                        } else {
+                          nextIds.add(item.id);
+                        }
+                        return nextIds;
+                      });
+                    }}
+                    aria-label={`Select ${variant?.sku ? `SKU ${variant.sku}` : 'cart item'}`}
+                  />
                   <div className={styles.itemImage}>
                     {imageUrl ? (
                       <img src={imageUrl} alt={`Variant ${variant.sku ?? ''}`} />
@@ -139,12 +165,11 @@ export default function CartPage() {
                         {formatPrice(variant.price_cents, variant.currency)} each
                       </span>
                     )}
-                    {variant?.price_cents != null && (
-                      <span className={styles.itemLineTotal}>
-                        Line: {formatPrice(variant.price_cents * item.quantity, variant.currency)}
-                        <span className={styles.lineNote}> (for reference only)</span>
+                    {variant?.option_values?.map((optionValue) => (
+                      <span key={optionValue.id} className={styles.itemOption}>
+                        {optionValue.option?.name ?? 'Option'}: {optionValue.value}
                       </span>
-                    )}
+                    ))}
                   </div>
 
                   <div className={styles.itemActions}>
@@ -183,8 +208,8 @@ export default function CartPage() {
 
             <div className={styles.summaryRows}>
               <div className={styles.summaryRow}>
-                <span>Items ({items.length})</span>
-                <span className={styles.summaryMuted}>—</span>
+                <span>Items ({selectedItems.length})</span>
+                <span>{formatPrice(totalCents, totalCurrency)}</span>
               </div>
               <div className={styles.summaryRow}>
                 <span>Shipping</span>
@@ -194,6 +219,11 @@ export default function CartPage() {
                 <span>Tax</span>
                 <span className={styles.summaryMuted}>Calculated at checkout</span>
               </div>
+            </div>
+
+            <div className={styles.totalRow}>
+              <span>Total</span>
+              <strong>{formatPrice(totalCents, totalCurrency)}</strong>
             </div>
 
 

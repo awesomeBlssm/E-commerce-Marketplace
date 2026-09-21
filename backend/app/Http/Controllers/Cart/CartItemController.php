@@ -13,7 +13,11 @@ class CartItemController extends Controller
 {
     public function index(Cart $cart): JsonResponse
     {
-        return response()->json($cart->items()->with('variant.images', 'variant.product.images')->get());
+        return response()->json($cart->items()->with(
+            'variant.images',
+            'variant.product.images',
+            'variant.optionValues.option'
+        )->get());
     }
 
     public function store(Request $request, Cart $cart): JsonResponse
@@ -35,12 +39,20 @@ class CartItemController extends Controller
             $item->increment('quantity', $data['quantity']);
         }
 
-        return response()->json($item->load('variant.images', 'variant.product.images'), $item->wasRecentlyCreated ? 201 : 200);
+        return response()->json($item->load(
+            'variant.images',
+            'variant.product.images',
+            'variant.optionValues.option'
+        ), $item->wasRecentlyCreated ? 201 : 200);
     }
 
     public function show(Cart $cart, CartItem $item): JsonResponse
     {
-        return response()->json($this->ownedItem($cart, $item)->load('variant.images', 'variant.product.images'));
+        return response()->json($this->ownedItem($cart, $item)->load(
+            'variant.images',
+            'variant.product.images',
+            'variant.optionValues.option'
+        ));
     }
 
     public function update(Request $request, Cart $cart, CartItem $item): JsonResponse
@@ -50,7 +62,11 @@ class CartItemController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
         ]));
 
-        return response()->json($item->fresh('variant.images', 'variant.product.images'));
+        return response()->json($item->fresh([
+            'variant.images',
+            'variant.product.images',
+            'variant.optionValues.option'
+        ]));
     }
 
     public function destroy(Cart $cart, CartItem $item): JsonResponse

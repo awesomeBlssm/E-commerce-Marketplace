@@ -21,7 +21,7 @@ class ProductVariantFactory extends Factory
             'barcode' => fake()->optional()->ean13(),
             'price_cents' => fake()->numberBetween(1500, 25000),
             'compare_at_cents' => null,
-            'currency' => 'USD',
+            'currency' => 'PHP',
             'weight_grams' => fake()->numberBetween(100, 3000),
             'requires_shipping' => true,
             'is_active' => true,

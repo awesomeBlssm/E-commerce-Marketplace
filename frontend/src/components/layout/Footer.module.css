@@ -18,9 +18,6 @@
   gap: var(--space-3);
 }
 
-.logoMark {
-  font-size: 2rem;
-}
 
 .logoText {
   font-size: var(--text-xl);
