@@ -6,9 +6,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-6);
-  padding-bottom: var(--space-8);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .avatar {
@@ -24,6 +23,97 @@
   font-weight: 800;
   flex-shrink: 0;
   box-shadow: var(--shadow-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.avatarButton {
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.avatarButton:disabled {
+  cursor: wait;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarOverlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-2);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.avatarInput {
+  display: none;
+}
+
+.cropBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.cropDialog {
+  width: min(100%, 420px);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--shadow-xl);
+}
+
+.cropDialog h2 {
+  margin-bottom: var(--space-4);
+  font-size: var(--text-xl);
+}
+
+.cropPreview {
+  width: min(100%, 320px);
+  aspect-ratio: 1;
+  margin: 0 auto var(--space-5);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 2px solid var(--brand-500);
+  border-radius: var(--radius-lg);
+  position: relative;
+}
+
+.cropControl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.cropControl input {
+  width: 100%;
+}
+
+.cropActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
 }
 
 .name {
@@ -36,6 +126,10 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin-top: var(--space-1);
+  max-width: min(100%, 420px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .badges {
@@ -50,6 +144,79 @@
   grid-template-columns: 320px 1fr;
   gap: var(--space-8);
   align-items: start;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-6);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tabActive {
+  border-bottom-color: var(--brand-500);
+  color: var(--text-brand);
+}
+
+.tabCount {
+  min-width: 22px;
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.tabPanel {
+  min-width: 0;
+}
+
+.detailsPanel,
+.ordersPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.detailsPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.detailsSidebar,
+.detailsMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.emailValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .leftCol, .rightCol {
@@ -103,6 +270,98 @@
   display: flex;
   gap: var(--space-3);
   flex-wrap: wrap;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field, .fieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.fieldWide {
+  grid-column: span 2;
+}
+
+.checkboxField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.checkboxField input {
+  accent-color: var(--text-brand);
+}
+
+.addressList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.addressCard {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.addressCard p {
+  margin-top: var(--space-1);
+}
+
+.addressHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.addressActions, .formActions {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.addressForm {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.addressForm h3 {
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.mutedText {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-5);
 }
 
 /* ── Order list ── */
@@ -220,6 +479,10 @@
   .grid {
     grid-template-columns: 1fr;
   }
+
+  .detailsPanel {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -232,6 +495,15 @@
     justify-content: center;
   }
 
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: 1 0 auto;
+    justify-content: center;
+  }
+
   .dl {
     grid-template-columns: 1fr;
     gap: var(--space-1);
@@ -239,5 +511,21 @@
 
   .dl dd {
     margin-bottom: var(--space-2);
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldWide {
+    grid-column: auto;
+  }
+
+  .addressCard {
+    flex-direction: column;
+  }
+
+  .addressActions {
+    align-items: center;
   }
 }

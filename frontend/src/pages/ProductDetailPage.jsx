@@ -15,6 +15,12 @@ function formatPrice(cents, currency = 'PHP') {
   }).format(cents / 100);
 }
 
+function getVariantOptionSelections(variant) {
+  return Object.fromEntries(
+    (variant?.option_values ?? []).map((optionValue) => [optionValue.option_id, optionValue.id]),
+  );
+}
+
 const Spinner = () => (
   <div className={styles.spinnerWrap}>
     <div className="spinner spinner-lg" />
@@ -45,6 +51,7 @@ export default function ProductDetailPage() {
   const [error, setError] = useState(null);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedOptionValues, setSelectedOptionValues] = useState({});
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
 
@@ -58,7 +65,9 @@ export default function ProductDetailPage() {
       .then((data) => {
         setProduct(data);
         const firstActive = data.variants?.find((v) => v.is_active);
-        setSelectedVariant(firstActive ?? data.variants?.[0] ?? null);
+        const initialVariant = firstActive ?? data.variants?.[0] ?? null;
+        setSelectedVariant(initialVariant);
+        setSelectedOptionValues(getVariantOptionSelections(initialVariant));
         setLoading(false);
       })
       .catch((err) => {
@@ -127,6 +136,26 @@ export default function ProductDetailPage() {
   const displayImages = images?.length > 0 ? images : null;
   const activeVariants = variants?.filter((v) => v.is_active) ?? [];
   const outOfStock = activeVariants.length === 0;
+
+  function selectOptionValue(option, value) {
+    const nextSelections = {
+      ...selectedOptionValues,
+      [option.id]: value.id,
+    };
+    const matchingVariant = activeVariants.find((variant) => {
+      const variantSelections = getVariantOptionSelections(variant);
+      return Object.entries(nextSelections).every(
+        ([optionId, valueId]) => variantSelections[optionId] === valueId,
+      );
+    });
+
+    if (matchingVariant) {
+      setSelectedVariant(matchingVariant);
+      setSelectedOptionValues(getVariantOptionSelections(matchingVariant));
+    } else {
+      setSelectedOptionValues(nextSelections);
+    }
+  }
 
   return (
     <div className="container">
@@ -221,7 +250,14 @@ export default function ProductDetailPage() {
                     <label className={styles.optionLabel}>{opt.name}</label>
                     <div className={styles.optionValues}>
                       {opt.values?.map((val) => (
-                        <button key={val.id} className={styles.optionValue} title={val.value}>
+                        <button
+                          key={val.id}
+                          type="button"
+                          className={`${styles.optionValue} ${selectedOptionValues[opt.id] === val.id ? styles.optionValueActive : ''}`}
+                          title={val.value}
+                          aria-pressed={selectedOptionValues[opt.id] === val.id}
+                          onClick={() => selectOptionValue(opt, val)}
+                        >
                           {val.value}
                         </button>
                       ))}
@@ -242,6 +278,7 @@ export default function ProductDetailPage() {
                   onChange={(e) => {
                     const v = variants.find((x) => x.id === e.target.value);
                     setSelectedVariant(v ?? null);
+                    setSelectedOptionValues(getVariantOptionSelections(v));
                   }}
                 >
                   {activeVariants.map((v) => (
