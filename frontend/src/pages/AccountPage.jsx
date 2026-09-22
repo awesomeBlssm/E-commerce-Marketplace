@@ -133,6 +133,7 @@ export default function AccountPage() {
   const [avatarCrop, setAvatarCrop] = useState({ x: 0, y: 0 });
   const [avatarCropZoom, setAvatarCropZoom] = useState(1);
   const [avatarCroppedAreaPixels, setAvatarCroppedAreaPixels] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [popupDetail, setPopupDetail] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
   const avatarInputRef = useRef(null);
@@ -354,6 +355,24 @@ export default function AccountPage() {
     setPopupDetail(fieldMap[field] ?? null);
   }
 
+  function handleFieldClick(field, isLocked) {
+    if (isLocked) {
+      openFieldDetail(field);
+    } else if (!isEditing) {
+      setIsEditing(true);
+    }
+  }
+
+  function handleCancelEdit() {
+    setProfileForm({
+      email: user?.email ?? displayedCustomer?.email ?? '',
+      full_name: displayedCustomer?.full_name ?? '',
+      phone: displayedCustomer?.phone ?? '',
+      accepts_marketing: displayedCustomer?.accepts_marketing ?? false,
+    });
+    setIsEditing(false);
+  }
+
   async function executeProfileSubmit() {
     setProfileSaving(true);
     try {
@@ -365,7 +384,8 @@ export default function AccountPage() {
       setCustomerDetails(updated);
       await refreshUser();
       setConfirmModal(null);
-      toast.success('Customer details updated.');
+      setIsEditing(false);
+      toast.success('Account details updated.');
     } catch (err) {
       const fieldError =
         err.errors?.full_name?.[0] ||
@@ -602,7 +622,7 @@ export default function AccountPage() {
             className={`${styles.tab} ${activeTab === 'details' ? styles.tabActive : ''}`}
             onClick={() => setActiveTab('details')}
           >
-            Customer Details
+            Account Details
           </button>
           <button
             type="button"
@@ -623,181 +643,165 @@ export default function AccountPage() {
             <div className={styles.detailsSidebar}>
             {/* Account details */}
             <section className={styles.section} aria-labelledby="account-details">
-              <h2 id="account-details" className={styles.sectionTitle}>Account Details</h2>
-              <dl className={styles.dl}>
-                <dt>Email</dt>       <dd className={styles.emailValue} title={email}>{email}</dd>
-                <dt>Account type</dt><dd style={{ textTransform: 'capitalize' }}>{type}</dd>
-                <dt>Status</dt>     <dd style={{ textTransform: 'capitalize' }}>{status}</dd>
-              </dl>
-            </section>
-
-            {/* Customer profile */}
-            {customer && (
-              <section className={styles.section} aria-labelledby="customer-profile">
-                <div className={styles.policyBanner}>
-                  <span className={styles.policyBannerIcon}>ℹ️</span>
-                  <div className={styles.policyBannerText}>
-                    <strong>Monthly Update Policy:</strong> Full name, email, and contact number can each only be updated <strong>once every 30 days</strong> and must be unique in the system.
+              <div className={styles.sectionHeader}>
+                <h2 id="account-details" className={[styles.sectionTitle, styles.removeMargin].join(' ')}>
+                  Account Details
+                </h2>
+                {customer && (
+                  !isEditing ? (
                     <button
                       type="button"
-                      className={styles.policyBannerBtn}
-                      onClick={() => openFieldDetail('policy')}
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setIsEditing(true)}
                     >
-                      View Policy Details
+                      Edit
                     </button>
-                  </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={handleCancelEdit}
+                      disabled={profileSaving}
+                    >
+                      Cancel
+                    </button>
+                  )
+                )}
+              </div>
+
+              {/* Account metadata: Type & Status */}
+              <div className={styles.metaRow}>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Account type:</span>
+                  <span className={styles.metaValue}>{type}</span>
                 </div>
+                <div className={styles.metaItem}>
+                  <span className={styles.metaLabel}>Status:</span>
+                  <span className={styles.metaValue}>{status}</span>
+                </div>
+              </div>
 
-                <h2 id="customer-profile" className={styles.sectionTitle}>Customer Profile</h2>
+              {customer ? (
                 <form className={styles.form} onSubmit={handleProfileSubmit}>
-                  {/* Email Field */}
-                  <label className={styles.field}>
-                    <div className={styles.fieldHeader}>
-                      <span className={styles.fieldTitleGroup}>
-                        <span>Email address</span>
-                        <button
-                          type="button"
-                          className={styles.infoBtn}
-                          onClick={() => openFieldDetail('email')}
-                          title="View email update policy and cooldown"
-                          aria-label="Email update policy"
-                        >
-                          ℹ️
-                        </button>
-                      </span>
-                      {isEmailLocked ? (
-                        <span
-                          className={styles.lockBadge}
-                          onClick={() => openFieldDetail('email')}
-                          style={{ cursor: 'pointer' }}
-                          title="Click for lock details"
-                        >
-                          🔒 Locked until {formatLockDate(displayedCustomer.email_locked_until)}
-                        </span>
-                      ) : (
-                        <span className={styles.unlockedBadge}>✓ Ready to edit</span>
-                      )}
-                    </div>
-                    <input
-                      className={`form-input ${isEmailLocked ? styles.inputLocked : ''}`}
-                      type="email"
-                      required
-                      disabled={isEmailLocked}
-                      value={profileForm.email}
-                      onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })}
-                      maxLength={255}
-                      onClick={() => isEmailLocked && openFieldDetail('email')}
-                    />
-                    {isEmailLocked && (
-                      <span className={styles.fieldHint}>
-                        Available to update on {formatLockDate(displayedCustomer.email_locked_until)} ({daysRemaining(displayedCustomer.email_locked_until)} days left).
-                      </span>
-                    )}
-                  </label>
-
                   {/* Full Name Field */}
-                  <label className={styles.field}>
-                    <div className={styles.fieldHeader}>
-                      <span className={styles.fieldTitleGroup}>
-                        <span>Full name</span>
-                        <button
-                          type="button"
-                          className={styles.infoBtn}
-                          onClick={() => openFieldDetail('full_name')}
-                          title="View full name update policy and cooldown"
-                          aria-label="Full name update policy"
-                        >
-                          ℹ️
-                        </button>
-                      </span>
-                      {isFullNameLocked ? (
-                        <span
-                          className={styles.lockBadge}
-                          onClick={() => openFieldDetail('full_name')}
-                          style={{ cursor: 'pointer' }}
-                          title="Click for lock details"
-                        >
-                          🔒 Locked until {formatLockDate(displayedCustomer.full_name_locked_until)}
-                        </span>
-                      ) : (
-                        <span className={styles.unlockedBadge}>✓ Ready to edit</span>
-                      )}
+                  <div className={styles.field}>
+                    <label htmlFor="profile-full-name">Full name</label>
+                    <div
+                      className={`${styles.inputWrapper} ${isFullNameLocked ? styles.inputWrapperLocked : ''}`}
+                      onClick={() => handleFieldClick('full_name', isFullNameLocked)}
+                      role={isFullNameLocked ? 'button' : undefined}
+                      tabIndex={isFullNameLocked ? 0 : undefined}
+                      onKeyDown={(e) => isFullNameLocked && (e.key === 'Enter' || e.key === ' ') && openFieldDetail('full_name')}
+                    >
+                      <input
+                        id="profile-full-name"
+                        className={`form-input ${isFullNameLocked ? styles.inputLocked : ''}`}
+                        disabled={!isEditing || isFullNameLocked}
+                        value={profileForm.full_name}
+                        onChange={(event) => setProfileForm({ ...profileForm, full_name: event.target.value })}
+                        maxLength={120}
+                        style={(!isEditing || isFullNameLocked) ? { pointerEvents: 'none' } : undefined}
+                      />
                     </div>
-                    <input
-                      className={`form-input ${isFullNameLocked ? styles.inputLocked : ''}`}
-                      disabled={isFullNameLocked}
-                      value={profileForm.full_name}
-                      onChange={(event) => setProfileForm({ ...profileForm, full_name: event.target.value })}
-                      maxLength={120}
-                      onClick={() => isFullNameLocked && openFieldDetail('full_name')}
-                    />
-                    {isFullNameLocked && (
-                      <span className={styles.fieldHint}>
-                        Available to update on {formatLockDate(displayedCustomer.full_name_locked_until)} ({daysRemaining(displayedCustomer.full_name_locked_until)} days left).
-                      </span>
-                    )}
-                  </label>
+                  </div>
+
+                  {/* Email Field */}
+                  <div className={styles.field}>
+                    <label htmlFor="profile-email">Email address</label>
+                    <div
+                      className={`${styles.inputWrapper} ${isEmailLocked ? styles.inputWrapperLocked : ''}`}
+                      onClick={() => handleFieldClick('email', isEmailLocked)}
+                      role={isEmailLocked ? 'button' : undefined}
+                      tabIndex={isEmailLocked ? 0 : undefined}
+                      onKeyDown={(e) => isEmailLocked && (e.key === 'Enter' || e.key === ' ') && openFieldDetail('email')}
+                    >
+                      <input
+                        id="profile-email"
+                        className={`form-input ${isEmailLocked ? styles.inputLocked : ''}`}
+                        type="email"
+                        required
+                        disabled={!isEditing || isEmailLocked}
+                        value={profileForm.email}
+                        onChange={(event) => setProfileForm({ ...profileForm, email: event.target.value })}
+                        maxLength={255}
+                        style={(!isEditing || isEmailLocked) ? { pointerEvents: 'none' } : undefined}
+                      />
+                    </div>
+                  </div>
 
                   {/* Phone Field */}
-                  <label className={styles.field}>
-                    <div className={styles.fieldHeader}>
-                      <span className={styles.fieldTitleGroup}>
-                        <span>Contact number (Phone)</span>
-                        <button
-                          type="button"
-                          className={styles.infoBtn}
-                          onClick={() => openFieldDetail('phone')}
-                          title="View contact number update policy and cooldown"
-                          aria-label="Contact number update policy"
-                        >
-                          ℹ️
-                        </button>
-                      </span>
-                      {isPhoneLocked ? (
-                        <span
-                          className={styles.lockBadge}
-                          onClick={() => openFieldDetail('phone')}
-                          style={{ cursor: 'pointer' }}
-                          title="Click for lock details"
-                        >
-                          🔒 Locked until {formatLockDate(displayedCustomer.phone_locked_until)}
-                        </span>
-                      ) : (
-                        <span className={styles.unlockedBadge}>✓ Ready to edit</span>
-                      )}
+                  <div className={styles.field}>
+                    <label htmlFor="profile-phone">Contact number (Phone)</label>
+                    <div
+                      className={`${styles.inputWrapper} ${isPhoneLocked ? styles.inputWrapperLocked : ''}`}
+                      onClick={() => handleFieldClick('phone', isPhoneLocked)}
+                      role={isPhoneLocked ? 'button' : undefined}
+                      tabIndex={isPhoneLocked ? 0 : undefined}
+                      onKeyDown={(e) => isPhoneLocked && (e.key === 'Enter' || e.key === ' ') && openFieldDetail('phone')}
+                    >
+                      <input
+                        id="profile-phone"
+                        className={`form-input ${isPhoneLocked ? styles.inputLocked : ''}`}
+                        type="tel"
+                        disabled={!isEditing || isPhoneLocked}
+                        placeholder="+63 9XX XXX XXXX or 09XXXXXXXXX"
+                        value={profileForm.phone}
+                        onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })}
+                        maxLength={32}
+                        style={(!isEditing || isPhoneLocked) ? { pointerEvents: 'none' } : undefined}
+                      />
                     </div>
-                    <input
-                      className={`form-input ${isPhoneLocked ? styles.inputLocked : ''}`}
-                      type="tel"
-                      disabled={isPhoneLocked}
-                      placeholder="+63 9XX XXX XXXX or 09XXXXXXXXX"
-                      value={profileForm.phone}
-                      onChange={(event) => setProfileForm({ ...profileForm, phone: event.target.value })}
-                      maxLength={32}
-                      onClick={() => isPhoneLocked && openFieldDetail('phone')}
-                    />
-                    <span className={styles.fieldHint}>
-                      {isPhoneLocked
-                        ? `Available to update on ${formatLockDate(displayedCustomer.phone_locked_until)} (${daysRemaining(displayedCustomer.phone_locked_until)} days left).`
-                        : '10 to 15 digits (e.g. 09171234567 or +639171234567). Must be unique in the database.'}
-                    </span>
-                  </label>
+                    {isEditing && (
+                      <span className={styles.fieldHint}>
+                        10 to 15 digits (e.g. 09171234567 or +639171234567).
+                      </span>
+                    )}
+                  </div>
 
                   <label className={styles.checkboxField}>
                     <input
                       type="checkbox"
+                      disabled={!isEditing}
                       checked={profileForm.accepts_marketing}
                       onChange={(event) => setProfileForm({ ...profileForm, accepts_marketing: event.target.checked })}
                     />
                     <span>Receive marketing updates</span>
                   </label>
 
-                  <button className="btn btn-primary btn-sm" type="submit" disabled={profileSaving}>
-                    {profileSaving ? 'Saving…' : 'Save Details'}
-                  </button>
+                  {isEditing && (
+                    <div className={styles.formActions}>
+                      <button className="btn btn-primary btn-sm" type="submit" disabled={profileSaving}>
+                        {profileSaving ? 'Saving…' : 'Save Details'}
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        type="button"
+                        onClick={handleCancelEdit}
+                        disabled={profileSaving}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  <div className={styles.policyNotice}>
+                    <span>Monthly update policy applies to name, email, and contact number.</span>
+                    <button
+                      type="button"
+                      className={styles.policyNoticeLink}
+                      onClick={() => openFieldDetail('policy')}
+                    >
+                      View policy
+                    </button>
+                  </div>
                 </form>
-              </section>
-            )}
+              ) : (
+                <dl className={styles.dl}>
+                  <dt>Email</dt>
+                  <dd className={styles.emailValue} title={email}>{email}</dd>
+                </dl>
+              )}
+            </section>
 
             </div>
 
